@@ -10,7 +10,7 @@ from models.memory import GRUCell, WorkingMemory, InformationIntegration
 class TestGRUCell:
     @pytest.fixture
     def gru_cell(self):
-        return GRUCell(hidden_dim=64)
+        return GRUCell(input_dim=64, hidden_dim=64)
 
     def test_gru_state_updates(self, gru_cell):
         # Test dimensions
@@ -70,7 +70,7 @@ class TestGRUCell:
 class TestWorkingMemory:
     @pytest.fixture
     def memory_module(self):
-        return WorkingMemory(hidden_dim=64, dropout_rate=0.1)
+        return WorkingMemory(input_dim=64, hidden_dim=64, dropout_rate=0.1)
 
     def test_sequence_processing(self, memory_module):
         batch_size = 2

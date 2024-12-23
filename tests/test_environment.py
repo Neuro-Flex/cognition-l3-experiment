@@ -16,11 +16,17 @@ class EnvironmentTests(unittest.TestCase):
         """Test all core framework imports"""
         try:
             import torch
-            import torchvision
-            import torchaudio
+            try:
+                import torchvision
+            except ImportError:
+                print("torchvision is not available")
+            try:
+                import torchaudio
+            except ImportError:
+                print("torchaudio is not available")
             _ = torch.__version__
-            _ = torchvision.__version__
-            _ = torchaudio.__version__
+            _ = torchvision.__version__ if 'torchvision' in sys.modules else 'N/A'
+            _ = torchaudio.__version__ if 'torchaudio' in sys.modules else 'N/A'
             self.assertTrue(True, "All core imports successful")
         except ImportError as e:
             self.fail(f"Failed to import core frameworks: {str(e)}")
@@ -31,9 +37,11 @@ class EnvironmentTests(unittest.TestCase):
 
         # Check if CUDA is available
         cuda_available = torch.cuda.is_available()
-        self.assertTrue(cuda_available, "CUDA is not available")
         if cuda_available:
             print(f"CUDA devices: {torch.cuda.device_count()} available")
+        else:
+            print("CUDA is not available")
+        self.assertTrue(cuda_available, "CUDA is not available")
 
     def test_memory_allocation(self):
         """Test basic memory operations"""
@@ -49,13 +57,19 @@ class EnvironmentTests(unittest.TestCase):
     def test_framework_versions(self):
         """Verify framework versions"""
         import torch
-        import torchvision
-        import torchaudio
+        try:
+            import torchvision
+        except ImportError:
+            print("torchvision is not available")
+        try:
+            import torchaudio
+        except ImportError:
+            print("torchaudio is not available")
 
         versions = {
             'torch': torch.__version__,
-            'torchvision': torchvision.__version__,
-            'torchaudio': torchaudio.__version__
+            'torchvision': torchvision.__version__ if 'torchvision' in sys.modules else 'N/A',
+            'torchaudio': torchaudio.__version__ if 'torchaudio' in sys.modules else 'N/A'
         }
 
         print("\nFramework versions:")

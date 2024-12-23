@@ -30,6 +30,7 @@ class TestStateManagement(ConsciousnessTestBase):
         assert new_state.shape == (batch_size, hidden_dim)
         assert 'state_value' in metrics
         assert 'energy_cost' in metrics
+        assert metrics['memory_gate'].shape == (batch_size, 1)  # Updated assertion
 
     def test_rl_optimization(self, state_manager, batch_size, hidden_dim):
         """Test reinforcement learning optimization."""

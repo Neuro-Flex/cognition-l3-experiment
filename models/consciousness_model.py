@@ -32,6 +32,7 @@ class ConsciousnessModel(nn.Module):
 
         # Working memory with GRU cells
         self.working_memory = WorkingMemory(
+            input_dim=hidden_dim,
             hidden_dim=hidden_dim,
             dropout_rate=dropout_rate
         )
@@ -47,7 +48,6 @@ class ConsciousnessModel(nn.Module):
         self.cognitive_integration = CognitiveProcessIntegration(
             hidden_dim=hidden_dim,
             num_heads=num_heads,
-            num_layers=num_layers,
             dropout_rate=dropout_rate
         )
 
