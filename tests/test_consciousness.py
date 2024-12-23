@@ -16,7 +16,8 @@ class TestConsciousnessModel(ConsciousnessTestBase):
             num_heads=num_heads,
             num_layers=4,
             num_states=4,
-            dropout_rate=0.1
+            dropout_rate=0.1,
+            input_dim=hidden_dim  # Added input_dim argument
         )
 
     @pytest.fixture

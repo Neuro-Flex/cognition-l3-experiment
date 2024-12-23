@@ -24,7 +24,7 @@ class TestInformationIntegration:
         # Test dimensions
         batch_size = 2
         num_modules = 4
-        input_dim = 32
+        input_dim = 64  # Updated to match expected shapes
 
         # Create sample inputs
         inputs = torch.randn(batch_size, num_modules, input_dim, device=device)
@@ -58,7 +58,7 @@ class TestInformationIntegration:
     def test_information_flow(self, device, integration_module):
         batch_size = 2
         num_modules = 4
-        input_dim = 32
+        input_dim = 64  # Updated to match expected shapes
 
         inputs = torch.zeros(batch_size, num_modules, input_dim, device=device)  # ensure shape matches the model
 
@@ -88,7 +88,7 @@ class TestInformationIntegration:
     def test_entropy_calculations(self, device, integration_module):
         batch_size = 2
         num_modules = 4
-        input_dim = 32
+        input_dim = 64  # Updated to match expected shapes
 
         # Test with different input distributions
         # Uniform distribution
@@ -109,7 +109,7 @@ class TestInformationIntegration:
     def test_memory_integration(self, device, integration_module):
         batch_size = 2
         num_modules = 4
-        input_dim = 32
+        input_dim = 64  # Updated to match expected shapes
 
         inputs = torch.randn(batch_size, num_modules, input_dim, device=device)
 

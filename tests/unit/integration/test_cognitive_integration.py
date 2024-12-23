@@ -18,7 +18,6 @@ class TestCognitiveProcessIntegration:
         return CognitiveProcessIntegration(
             hidden_dim=64,
             num_heads=4,
-            num_layers=3,
             dropout_rate=0.1
         ).to(device)
 

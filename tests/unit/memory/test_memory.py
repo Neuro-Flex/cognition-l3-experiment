@@ -31,6 +31,7 @@ class TestMemoryComponents(ConsciousnessTestBase):
     def working_memory(self, hidden_dim):
         """Create working memory module for testing."""
         return WorkingMemory(
+            input_dim=hidden_dim,
             hidden_dim=hidden_dim,
             dropout_rate=0.1
         ).to(self.device)
@@ -47,7 +48,7 @@ class TestMemoryComponents(ConsciousnessTestBase):
     @pytest.fixture
     def gru_cell(self, hidden_dim):
         """Create GRU cell for testing."""
-        return GRUCell(hidden_dim=hidden_dim).to(self.device)
+        return GRUCell(input_dim=hidden_dim, hidden_dim=hidden_dim).to(self.device)
 
     def test_gru_state_updates(self, gru_cell, device, batch_size, hidden_dim):
         """Test GRU cell state updates."""
