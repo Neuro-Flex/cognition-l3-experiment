@@ -7,12 +7,13 @@ import numpy as np
 from tests.unit.test_base import ConsciousnessTestBase
 from models.consciousness_state import ConsciousnessStateManager
 
+@pytest.fixture
+def state_manager():
+    """Create a ConsciousnessStateManager instance for testing."""
+    return ConsciousnessStateManager(hidden_dim=64, num_states=4)
+
 class TestStateManagement(ConsciousnessTestBase):
     """Test suite for consciousness state management."""
-
-    @pytest.fixture
-    def state_manager(self):
-        return ConsciousnessStateManager(hidden_dim=64, num_states=4, dropout_rate=0.1)
 
     def test_state_updates(self, state_manager, batch_size, hidden_dim):
         """Test consciousness state updates."""
@@ -119,3 +120,18 @@ class TestStateManagement(ConsciousnessTestBase):
         states = torch.stack(new_states)
         for i in range(len(states)-1):
             assert not torch.allclose(states[i], states[i+1], rtol=1e-5)
+
+def test_state_manager_forward(state_manager):
+    """Test forward pass of the state manager."""
+    batch_size = 2
+    hidden_dim = 64
+    state = torch.randn(batch_size, hidden_dim)
+    inputs = torch.randn(batch_size, hidden_dim)
+    new_state, metrics = state_manager(state, inputs)
+    assert new_state.shape == (batch_size, hidden_dim)
+    assert 'memory_gate' in metrics
+    assert 'energy_cost' in metrics
+    assert 'state_value' in metrics
+
+if __name__ == '__main__':
+    pytest.main([__file__])

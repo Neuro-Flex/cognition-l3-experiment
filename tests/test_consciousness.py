@@ -9,7 +9,7 @@ class TestConsciousnessModel(ConsciousnessTestBase):
     """Test cases for the consciousness model."""
 
     @pytest.fixture
-    def model(self, hidden_dim, num_heads):
+    def model(self, hidden_dim=64, num_heads=4):
         """Create a consciousness model for testing."""
         return ConsciousnessModel(
             hidden_dim=hidden_dim,
@@ -37,10 +37,10 @@ class TestConsciousnessModel(ConsciousnessTestBase):
     def test_model_initialization(self, model):
         """Test that consciousness model initializes correctly."""
         assert isinstance(model, ConsciousnessModel)
-        assert model.hidden_dim == 64
-        assert model.num_heads == 4
-        assert model.num_layers == 4
-        assert model.num_states == 4
+        assert model.hidden_dim == 64, f"Expected hidden_dim to be 64, but got {model.hidden_dim}"
+        assert model.num_heads == 4, f"Expected num_heads to be 4, but got {model.num_heads}"
+        assert model.num_layers == 4, f"Expected num_layers to be 4, but got {model.num_layers}"
+        assert model.num_states == 4, f"Expected num_states to be 4, but got {model.num_states}"
 
     def test_model_forward_pass(self, model, sample_input, deterministic):
         """Test forward pass through consciousness model."""

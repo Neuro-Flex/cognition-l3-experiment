@@ -7,6 +7,11 @@ import torch.nn.functional as F
 from tests.unit.test_base import ConsciousnessTestBase
 from models.attention import ConsciousnessAttention, GlobalWorkspace
 
+@pytest.fixture
+def attention():
+    """Create a ConsciousnessAttention instance for testing."""
+    return ConsciousnessAttention(num_heads=4, head_dim=64)
+
 class TestAttentionMechanisms(ConsciousnessTestBase):
     """Test suite for attention mechanisms."""
 
@@ -96,3 +101,17 @@ class TestAttentionMechanisms(ConsciousnessTestBase):
         # Test residual connection
         # Output should be different from input due to processing
         assert not torch.allclose(output, inputs, rtol=1e-5)
+
+def test_attention_forward(attention):
+    """Test forward pass of the attention mechanism."""
+    batch_size = 2
+    seq_length = 8
+    input_dim = 256
+    inputs_q = torch.randn(batch_size, seq_length, input_dim)
+    inputs_kv = torch.randn(batch_size, seq_length, input_dim)
+    output, attention_weights = attention(inputs_q, inputs_kv)
+    assert output.shape == (batch_size, seq_length, input_dim)
+    assert attention_weights.shape == (batch_size, 4, seq_length, seq_length)
+
+if __name__ == '__main__':
+    pytest.main([__file__])
