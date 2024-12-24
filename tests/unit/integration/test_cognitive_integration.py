@@ -17,8 +17,7 @@ class TestCognitiveProcessIntegration:
     def integration_module(self, device):
         return CognitiveProcessIntegration(
             hidden_dim=64,
-            num_heads=4,
-            dropout_rate=0.1
+            num_heads=4
         ).to(device)
 
     def test_cross_modal_attention(self, device, integration_module):
