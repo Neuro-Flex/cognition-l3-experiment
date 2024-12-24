@@ -13,7 +13,7 @@ class HardwareManager:
         self.cuda_available = torch.cuda.is_available()
         self.device = torch.device("cuda" if self.cuda_available else "cpu")
         if self.cuda_available:
-            self.gpu_properties = torch.cuda.get_device_properties(0)
+            self.gpu_memory = torch.cuda.get_device_properties(0).total_memory
 
     def get_hardware_info(self) -> Dict[str, Any]:
         """Get current hardware configuration information."""
@@ -25,22 +25,15 @@ class HardwareManager:
             "cuda_available": self.cuda_available
         }
         if self.cuda_available:
-            info.update({
-                "gpu_name": self.gpu_properties.name,
-                "gpu_memory": self.gpu_properties.total_memory,
-                "cuda_version": torch.version.cuda
-            })
+            info["gpu_memory"] = self.gpu_memory
         return info
 
     def optimize_batch_size(self, model_size: int) -> int:
         """Calculate optimal batch size based on available memory."""
         if self.cuda_available:
-            gpu_mem = torch.cuda.get_device_properties(0).total_memory
-            available_memory = gpu_mem - torch.cuda.memory_allocated(0)
-            max_batch_size = available_memory // (model_size * 4)  # float32
+            max_batch_size = self.gpu_memory // model_size
         else:
-            available_memory = self.memory.available
-            max_batch_size = available_memory // (model_size * 8)
+            max_batch_size = self.memory.available // model_size
         return min(max_batch_size, 32)
 
     def get_optimal_thread_count(self) -> int:

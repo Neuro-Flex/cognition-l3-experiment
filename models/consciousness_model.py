@@ -32,6 +32,7 @@ class ConsciousnessModel(nn.Module):
 
         # Working memory with GRU cells
         self.working_memory = WorkingMemory(
+            input_dim=hidden_dim,  # Add this line
             hidden_dim=hidden_dim,
             dropout_rate=dropout_rate
         )

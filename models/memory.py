@@ -50,7 +50,7 @@ class WorkingMemory(nn.Module):
     """
     Working memory component with context-aware gating for consciousness.
     """
-    def __init__(self, input_dim: int, hidden_dim: int, dropout_rate: float):
+    def __init__(self, input_dim: int, hidden_dim: int, dropout_rate: float = 0.1):
         super().__init__()
         self.hidden_dim = hidden_dim
         self.dropout_rate = dropout_rate
