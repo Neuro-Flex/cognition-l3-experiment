@@ -14,13 +14,14 @@ class ConsciousnessModel(nn.Module):
     Complete consciousness model integrating GWT, IIT, working memory,
     and cognitive process management.
     """
-    def __init__(self, hidden_dim: int, num_heads: int, num_layers: int, num_states: int, dropout_rate: float = 0.1):
+    def __init__(self, hidden_dim: int, num_heads: int, num_layers: int, num_states: int, dropout_rate: float = 0.1, input_dim: int = None):
         super().__init__()
         self.hidden_dim = hidden_dim
         self.num_heads = num_heads
         self.num_layers = num_layers
         self.num_states = num_states
         self.dropout_rate = dropout_rate
+        self.input_dim = input_dim if input_dim is not None else hidden_dim
 
         # Global Workspace for conscious awareness
         self.global_workspace = GlobalWorkspace(
@@ -32,7 +33,7 @@ class ConsciousnessModel(nn.Module):
 
         # Working memory with GRU cells
         self.working_memory = WorkingMemory(
-            input_dim=hidden_dim,
+            input_dim=self.input_dim,
             hidden_dim=hidden_dim,
             dropout_rate=dropout_rate
         )
