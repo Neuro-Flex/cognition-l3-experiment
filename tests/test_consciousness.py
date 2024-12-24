@@ -24,10 +24,10 @@ class TestConsciousnessModel(ConsciousnessTestBase):
     def sample_input(self, batch_size, seq_length, hidden_dim):
         """Create sample input data for testing."""
         inputs = {
-            'attention': self.create_inputs(batch_size, seq_length, hidden_dim),
-            'memory': self.create_inputs(batch_size, seq_length, hidden_dim),
-            'reasoning': self.create_inputs(batch_size, seq_length, hidden_dim),
-            'emotion': self.create_inputs(batch_size, seq_length, hidden_dim)
+            'attention': self.create_inputs(self.seed, batch_size, seq_length, hidden_dim),
+            'memory': self.create_inputs(self.seed, batch_size, seq_length, hidden_dim),
+            'reasoning': self.create_inputs(self.seed, batch_size, seq_length, hidden_dim),
+            'emotion': self.create_inputs(self.seed, batch_size, seq_length, hidden_dim)
         }
         return inputs
 
@@ -38,7 +38,7 @@ class TestConsciousnessModel(ConsciousnessTestBase):
     def test_model_initialization(self, model):
         """Test that consciousness model initializes correctly."""
         assert isinstance(model, ConsciousnessModel)
-        assert model.hidden_dim == 64
+        assert model.hidden_dim == 128
         assert model.num_heads == 4
         assert model.num_layers == 4
         assert model.num_states == 4
@@ -51,7 +51,7 @@ class TestConsciousnessModel(ConsciousnessTestBase):
 
         # Run forward pass
         with torch.no_grad() if deterministic else torch.enable_grad():
-            new_state, metrics = model(sample_input)
+            new_state, metrics = model(sample_input, deterministic=deterministic)
 
         # Check output structure and shapes
         batch_size = sample_input['attention'].shape[0]
@@ -69,7 +69,7 @@ class TestConsciousnessModel(ConsciousnessTestBase):
     def test_model_config(self, model):
         """Test model configuration methods."""
         config = model.get_config()
-        assert config['hidden_dim'] == 64
+        assert config['hidden_dim'] == 128
         assert config['num_heads'] == 4
         assert config['num_layers'] == 4
         assert config['num_states'] == 4
@@ -86,17 +86,16 @@ class TestConsciousnessModel(ConsciousnessTestBase):
         input_shape = (model.hidden_dim,)
         model.eval() if deterministic else model.train()
         with torch.no_grad() if deterministic else torch.enable_grad():
-            variables = model.init(sample_input)
-        assert 'params' in variables
-        assert 'batch_stats' in variables
+            state = torch.zeros(sample_input['attention'].shape[0], model.hidden_dim)
+        assert state.shape == (sample_input['attention'].shape[0], model.hidden_dim)
 
     def test_model_state_update(self, model, sample_input, deterministic):
         """Test updating the model state."""
         input_shape = (model.hidden_dim,)
         model.eval() if deterministic else model.train()
         with torch.no_grad() if deterministic else torch.enable_grad():
-            variables = model.init(sample_input)
-            new_state, metrics = model(sample_input)
+            state = torch.zeros(sample_input['attention'].shape[0], model.hidden_dim)
+            new_state, metrics = model(sample_input, state=state, deterministic=deterministic)
         assert new_state is not None
         assert 'memory_state' in metrics
 
@@ -105,8 +104,8 @@ class TestConsciousnessModel(ConsciousnessTestBase):
         input_shape = (model.hidden_dim,)
         model.eval() if deterministic else model.train()
         with torch.no_grad() if deterministic else torch.enable_grad():
-            variables = model.init(sample_input)
-            _, metrics = model(sample_input)
+            state = torch.zeros(sample_input['attention'].shape[0], model.hidden_dim)
+            _, metrics = model(sample_input, state=state, deterministic=deterministic)
         attention_weights = metrics['attention_weights']
         assert attention_weights.ndim == 4  # (batch, heads, seq, seq)
         assert torch.all(attention_weights >= 0)

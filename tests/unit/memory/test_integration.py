@@ -64,11 +64,11 @@ class TestInformationIntegration:
 
         # Test with and without dropout
         integration_module.train()
-        output1, _ = integration_module(inputs)
+        output1, _ = integration_module(inputs, deterministic=False)
 
         integration_module.eval()
         with torch.no_grad():
-            output2, _ = integration_module(inputs)
+            output2, _ = integration_module(inputs, deterministic=True)
 
         # Test residual connection properties
         # Output should maintain some similarity with input
