@@ -3,6 +3,7 @@ Base test configuration and utilities for consciousness model tests.
 """
 import torch
 import pytest
+from models.memory import WorkingMemory, InformationIntegration, GRUCell
 
 class ConsciousnessTestBase:
     """Base class for consciousness model tests."""

@@ -5,9 +5,9 @@ import torch
 import torch.nn as nn
 from typing import Any, Dict
 
-from .attention import GlobalWorkspace
-from .memory import WorkingMemory, InformationIntegration
-from .consciousness_state import CognitiveProcessIntegration, ConsciousnessStateManager
+from models.attention import GlobalWorkspace
+from models.memory import WorkingMemory, InformationIntegration
+from models.consciousness_state import CognitiveProcessIntegration, ConsciousnessStateManager
 
 class ConsciousnessModel(nn.Module):
     """
@@ -48,7 +48,6 @@ class ConsciousnessModel(nn.Module):
         self.cognitive_integration = CognitiveProcessIntegration(
             hidden_dim=hidden_dim,
             num_heads=num_heads,
-            num_layers=num_layers,
             dropout_rate=dropout_rate
         )
 

@@ -5,7 +5,6 @@ import pytest
 import torch
 
 # Configure PyTorch for CPU optimization
-torch.set_default_tensor_type(torch.FloatTensor)
 
 # Test configuration for CPU optimization
 BATCH_SIZE = 4
