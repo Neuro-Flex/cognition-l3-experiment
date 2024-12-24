@@ -37,7 +37,7 @@ class TestCognitiveProcessIntegration:
         input_shape = (64,)
         integration_module.eval()
         with torch.no_grad():
-            consciousness_state, attention_maps = integration_module(inputs)
+            consciousness_state, attention_maps = integration_module(inputs, deterministic=True)
 
         # Test output shapes
         assert consciousness_state.shape == (batch_size, seq_length, 64)
@@ -69,7 +69,7 @@ class TestCognitiveProcessIntegration:
         input_shape = (64,)
         integration_module.eval()
         with torch.no_grad():
-            consciousness_state1, _ = integration_module(single_input)
+            consciousness_state1, _ = integration_module(single_input, deterministic=True)
 
         # Test with multiple modalities
         multi_input = {
@@ -78,7 +78,7 @@ class TestCognitiveProcessIntegration:
         }
 
         with torch.no_grad():
-            consciousness_state2, _ = integration_module(multi_input)
+            consciousness_state2, _ = integration_module(multi_input, deterministic=True)
 
         # Multi-modal processing should produce different results
         assert not torch.allclose(consciousness_state1, consciousness_state2)
@@ -97,7 +97,7 @@ class TestCognitiveProcessIntegration:
         states = []
         with torch.no_grad():
             for _ in range(5):
-                state, _ = integration_module(inputs)
+                state, _ = integration_module(inputs, deterministic=True)
                 states.append(state)
 
         # All forward passes should produce identical results
@@ -108,7 +108,7 @@ class TestCognitiveProcessIntegration:
         integration_module.train()
         states_dropout = []
         for i in range(5):
-            state, _ = integration_module(inputs)
+            state, _ = integration_module(inputs, deterministic=True)
             states_dropout.append(state)
 
         # Dropout should produce different results
@@ -134,7 +134,7 @@ class TestCognitiveProcessIntegration:
         input_shape = (64,)
         integration_module.eval()
         with torch.no_grad():
-            consciousness_state, attention_maps = integration_module(inputs)
+            consciousness_state, attention_maps = integration_module(inputs, deterministic=True)
 
         # Adjust assertions as needed
         assert consciousness_state.shape == (batch_size, seq_length, 64)

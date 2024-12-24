@@ -68,7 +68,7 @@ class TestMemoryComponents(ConsciousnessTestBase):
         """Test working memory sequence processing."""
         # Test with different sequence lengths
         for test_length in [4, 8, 16]:
-            inputs = self.create_inputs(device, batch_size, test_length, hidden_dim)
+            inputs = self.create_inputs(self.seed, batch_size, test_length, hidden_dim)
             initial_state = torch.zeros(batch_size, hidden_dim, device=device)
 
             output, final_state = working_memory(inputs, initial_state, deterministic=True)
@@ -79,7 +79,7 @@ class TestMemoryComponents(ConsciousnessTestBase):
     def test_context_aware_gating(self, working_memory, device, batch_size, seq_length, hidden_dim):
         """Test context-aware gating mechanisms."""
         # Create two different input sequences with controlled differences
-        base_inputs = self.create_inputs(device, batch_size, seq_length, hidden_dim)
+        base_inputs = self.create_inputs(self.seed, batch_size, seq_length, hidden_dim)
 
         # Create similar and different inputs
         similar_inputs = base_inputs + torch.randn_like(base_inputs) * 0.1
@@ -101,7 +101,7 @@ class TestMemoryComponents(ConsciousnessTestBase):
         """Test information integration computation."""
         # Create inputs with proper shape for information integration
         inputs = torch.stack([
-            self.create_inputs(device, batch_size, seq_length, hidden_dim)
+            self.create_inputs(self.seed, batch_size, seq_length, hidden_dim)
             for _ in range(info_integration.num_modules)
         ], dim=1)  # Shape: [batch, num_modules, seq_length, hidden_dim]
 
@@ -123,7 +123,7 @@ class TestMemoryComponents(ConsciousnessTestBase):
         pattern = torch.ones(batch_size, 1, hidden_dim, device=device)
         inputs = torch.cat([
             pattern,
-            self.create_inputs(device, batch_size, seq_length-2, hidden_dim),
+            self.create_inputs(self.seed, batch_size, seq_length-2, hidden_dim),
             pattern
         ], dim=1)
 

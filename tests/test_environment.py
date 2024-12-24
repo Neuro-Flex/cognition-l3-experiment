@@ -26,7 +26,7 @@ class EnvironmentTests(unittest.TestCase):
                 print("torchaudio is not available")
             _ = torch.__version__
             _ = torchvision.__version__ if 'torchvision' in sys.modules else 'N/A'
-            _ = torchaudio.__version__ if 'torchaudio' in sys.modules else 'N/A'
+            _ = torchaudio.__version__ if 'torudio' in sys.modules else 'N/A'
             self.assertTrue(True, "All core imports successful")
         except ImportError as e:
             self.fail(f"Failed to import core frameworks: {str(e)}")
