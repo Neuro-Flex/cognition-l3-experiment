@@ -28,7 +28,7 @@ class CognitiveProcessIntegration(nn.Module):
     def forward(self, inputs: Dict[str, torch.Tensor], deterministic: bool = True):
         processed_modalities = {}
         for modality, x in inputs.items():
-            x = nn.LayerNorm()(x)
+            x = nn.LayerNorm(x.size()[2:])(x)
             x = nn.Linear(x.size(-1), self.hidden_dim)(x)
             x = nn.GELU()(x)
             if not deterministic:

@@ -46,6 +46,26 @@ class GRUCell(nn.Module):
 
         return h_new
 
+    def reset_parameters(self):
+        """
+        Initialize parameters of the GRU cell.
+        """
+        nn.init.kaiming_uniform_(self.update.weight, a=math.sqrt(5))
+        nn.init.kaiming_uniform_(self.reset.weight, a=math.sqrt(5))
+        nn.init.kaiming_uniform_(self.candidate.weight, a=math.sqrt(5))
+        if self.update.bias is not None:
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.update.weight)
+            bound = 1 / math.sqrt(fan_in)
+            nn.init.uniform_(self.update.bias, -bound, bound)
+        if self.reset.bias is not None:
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.reset.weight)
+            bound = 1 / math.sqrt(fan_in)
+            nn.init.uniform_(self.reset.bias, -bound, bound)
+        if self.candidate.bias is not None:
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.candidate.weight)
+            bound = 1 / math.sqrt(fan_in)
+            nn.init.uniform_(self.candidate.bias, -bound, bound)
+
 class WorkingMemory(nn.Module):
     def __init__(self, input_dim, hidden_dim):
         super().__init__()
