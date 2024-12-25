@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from typing import Dict, Optional, Tuple
-
+import torch as F
 class CognitiveProcessIntegration(nn.Module):
     """
     Extended transformer architecture for multi-modal task management.
@@ -27,23 +27,56 @@ class CognitiveProcessIntegration(nn.Module):
         self.layer_norm = nn.LayerNorm(hidden_dim)
         self.dropout = nn.Dropout(dropout_rate)
         self.cross_modal_projection = nn.Linear(hidden_dim, hidden_dim)
+        
+        # Add modality combination layer
+        self.modality_combination = nn.Linear(hidden_dim, hidden_dim)
 
     def forward(self, inputs: Dict[str, torch.Tensor], deterministic: bool = True):
-        # Process input dictionary to create a single tensor
-        x = next(iter(inputs.values()))  # Take first input as base
-        
-        # Apply input projection to each sequence in batch
-        x = x.view(-1, x.size(-1))  # Reshape to (batch * seq, hidden_dim)
-        x = self.input_projection(x)
-        x = x.view(*inputs[next(iter(inputs))].shape[:-1], -1)  # Restore original shape
-        
-        # Rest of processing
+        """Process multiple modalities and generate cross-modal attention maps."""
+        batch_size = next(iter(inputs.values())).size(0)
+        seq_length = next(iter(inputs.values())).size(1)
         attention_maps = {}
-        if not deterministic:
-            x = self.dropout(x)
-        x = self.layer_norm(x)
+        processed_states = {}
         
-        return x, attention_maps
+        # First pass: Project all inputs
+        for modality, tensor in inputs.items():
+            processed = self.input_projection(tensor)
+            processed_states[modality] = processed
+
+        # Initialize combined state with zeros
+        combined_state = torch.zeros(
+            batch_size, seq_length, self.hidden_dim,
+            device=next(iter(inputs.values())).device
+        )
+
+        # Generate attention maps between all modality pairs
+        for source in inputs.keys():
+            for target in inputs.keys():
+                if source != target:
+                    query = processed_states[target]
+                    key = processed_states[source]
+                    value = processed_states[source]
+                    
+                    attn_output, attn_weights = self.attention(
+                        query=query,
+                        key=key,
+                        value=value
+                    )
+                    
+                    # Store attention map
+                    map_key = f"{target}-{source}"
+                    attention_maps[map_key] = attn_weights
+                    
+                    # Add to combined state
+                    combined_state = combined_state + attn_output
+
+        # Final processing
+        combined_state = self.modality_combination(combined_state)
+        if not deterministic:
+            combined_state = self.dropout(combined_state)
+        combined_state = self.layer_norm(combined_state)
+        
+        return combined_state, attention_maps
 
 class ConsciousnessStateManager(nn.Module):
     """
@@ -74,6 +107,9 @@ class ConsciousnessStateManager(nn.Module):
 
         # For RL "value"
         self.value_network = nn.Linear(hidden_dim, 1)
+        
+        # Add similarity computation layer
+        self.similarity_projection = nn.Linear(hidden_dim, hidden_dim)
 
     def forward(self, state: torch.Tensor, inputs: torch.Tensor,
                 threshold: float = 0.5, deterministic: bool = True):
@@ -87,7 +123,16 @@ class ConsciousnessStateManager(nn.Module):
 
         # Compute memory gate
         raw_gate = self.gate_network(state * inputs)
-        memory_gate = torch.sigmoid(raw_gate)         # shape [batch_size, hidden_dim]
+        
+        # Compute input similarity
+        similarity = F.cosine_similarity(
+            self.similarity_projection(state),
+            self.similarity_projection(inputs),
+            dim=-1
+        ).unsqueeze(-1)
+        
+        # Modulate gate based on similarity
+        memory_gate = torch.sigmoid(raw_gate) * similarity
 
         # Apply threshold masking
         mask = (memory_gate >= threshold).float()

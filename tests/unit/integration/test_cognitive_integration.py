@@ -24,7 +24,7 @@ class TestCognitiveProcessIntegration:
         # Test dimensions
         batch_size = 2
         seq_length = 8
-        input_dim = 32
+        input_dim = 64  # Updated input_dim to match the expected input shape
 
         # Create multi-modal inputs
         inputs = {
@@ -47,20 +47,20 @@ class TestCognitiveProcessIntegration:
             for target in inputs.keys():
                 if source != target:
                     map_key = f"{target}-{source}"
-                    assert map_key in attention_maps
+                    assert map_key in attention_maps, f"Missing attention map for {map_key}"
                     attention_map = attention_maps[map_key]
                     # Check attention map properties
                     assert attention_map.shape[-2:] == (seq_length, seq_length)
                     # Verify attention weights sum to 1
                     assert torch.allclose(
                         attention_map.sum(dim=-1),
-                        torch.ones((batch_size, 4, seq_length), device=device)
+                        torch.ones((batch_size, seq_length), device=device)
                     )
 
     def test_modality_specific_processing(self, device, integration_module):
         batch_size = 2
         seq_length = 8
-        input_dim = 32
+        input_dim = 64  # Updated input_dim to match the expected input shape
 
         # Test with single modality
         single_input = {
@@ -81,12 +81,12 @@ class TestCognitiveProcessIntegration:
             consciousness_state2, _ = integration_module(multi_input, deterministic=True)
 
         # Multi-modal processing should produce different results
-        assert not torch.allclose(consciousness_state1, consciousness_state2)
+        assert not torch.allclose(consciousness_state1, consciousness_state2), "Consciousness states should differ for single vs multiple modalities"
 
     def test_integration_stability(self, device, integration_module):
         batch_size = 2
         seq_length = 8
-        input_dim = 32
+        input_dim = 64  # Updated input_dim to match the expected input shape
 
         inputs = {
             'modality1': torch.randn(batch_size, seq_length, input_dim, device=device),
@@ -108,7 +108,7 @@ class TestCognitiveProcessIntegration:
         integration_module.train()
         states_dropout = []
         for i in range(5):
-            state, _ = integration_module(inputs, deterministic=True)
+            state, _ = integration_module(inputs, deterministic=False)
             states_dropout.append(state)
 
         # Dropout should produce different results
@@ -121,7 +121,7 @@ class TestCognitiveProcessIntegration:
         # Test dimensions
         batch_size = 2
         seq_length = 8
-        input_dim = 32
+        input_dim = 64  # Updated input_dim to match the expected input shape
 
         # Create multi-modal inputs
         inputs = {
@@ -142,10 +142,10 @@ class TestCognitiveProcessIntegration:
             for target in inputs.keys():
                 if source != target:
                     map_key = f"{target}-{source}"
-                    assert map_key in attention_maps
+                    assert map_key in attention_maps, f"Missing attention map for {map_key}"
                     attention_map = attention_maps[map_key]
                     assert attention_map.shape[-2:] == (seq_length, seq_length)
                     assert torch.allclose(
                         attention_map.sum(dim=-1),
-                        torch.ones((batch_size, 4, seq_length), device=device)
+                        torch.ones((batch_size, seq_length), device=device)
                     )

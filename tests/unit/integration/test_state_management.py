@@ -98,7 +98,7 @@ class TestConsciousnessStateManager:
 
         # Memory gate should be higher for similar inputs (more integration)
         # and lower for different inputs (more filtering)
-        assert torch.mean(metrics1['memory_gate']) > torch.mean(metrics2['memory_gate'])
+        assert torch.mean(metrics1['memory_gate']) > torch.mean(metrics2['memory_gate']), "Memory gate should be higher for similar inputs"
 
         # Energy cost should be lower for similar inputs
         assert metrics1['energy_cost'].item() < metrics2['energy_cost'].item()
