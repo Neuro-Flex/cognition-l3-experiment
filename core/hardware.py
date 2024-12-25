@@ -60,3 +60,16 @@ class HardwareManager:
         torch.set_num_threads(self.get_optimal_thread_count())
         if self.cuda_available:
             torch.backends.cudnn.benchmark = True
+
+    def manage_resources(self):
+        """Ensure efficient use of available resources."""
+        if self.cuda_available:
+            torch.cuda.empty_cache()
+            torch.cuda.synchronize()
+        else:
+            psutil.virtual_memory()
+
+    def optimize_performance(self):
+        """Optimize system performance based on available hardware."""
+        self.setup_environment()
+        self.manage_resources()

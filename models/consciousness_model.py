@@ -78,6 +78,14 @@ class ConsciousnessModel(nn.Module):
         self.transformation_net = nn.Linear(self.hidden_dim * 2, self.hidden_dim)
         self.rule_encoder = nn.Linear(self.hidden_dim, self.hidden_dim)
 
+        # Add context-switching challenges
+        self.context_switching_net = nn.Linear(self.hidden_dim, self.hidden_dim)
+        self.context_switching_gate = nn.Linear(self.hidden_dim, self.hidden_dim)
+
+        # Add creative problem-solving scenarios
+        self.creative_problem_solving_net = nn.Linear(self.hidden_dim, self.hidden_dim)
+        self.creative_problem_solving_gate = nn.Linear(self.hidden_dim, self.hidden_dim)
+
     def forward(self, inputs, state=None, initial_state=None, deterministic=True, consciousness_threshold=0.5):
         """
         Process inputs through consciousness architecture.
@@ -196,6 +204,21 @@ class ConsciousnessModel(nn.Module):
 
         # Ensure new_state has shape (batch_size, hidden_dim)
         new_state = new_state.mean(dim=1)
+
+        # Add context-switching challenges
+        context_switching_output = self.context_switching_net(new_state)
+        context_switching_gate = torch.sigmoid(self.context_switching_gate(new_state))
+        context_switching_state = context_switching_gate * context_switching_output + (1 - context_switching_gate) * new_state
+
+        # Add creative problem-solving scenarios
+        creative_problem_solving_output = self.creative_problem_solving_net(new_state)
+        creative_problem_solving_gate = torch.sigmoid(self.creative_problem_solving_gate(new_state))
+        creative_problem_solving_state = creative_problem_solving_gate * creative_problem_solving_output + (1 - creative_problem_solving_gate) * new_state
+
+        metrics.update({
+            'context_switching_state': context_switching_state,
+            'creative_problem_solving_state': creative_problem_solving_state
+        })
 
         return new_state, {
             'attention_weights': attention_weights,

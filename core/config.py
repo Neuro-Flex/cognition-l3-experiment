@@ -87,3 +87,16 @@ class TrainingConfig:
             self.batch_size = 32
             self.gradient_accumulation_steps = 1
             self.eval_steps = 500
+
+@dataclass
+class SystemPerformanceConfig:
+    """System performance optimization settings."""
+    max_threads: int = 8
+    use_gpu: bool = torch.cuda.is_available()
+    gpu_memory_fraction: float = 0.9  # Fraction of GPU memory to use
+
+    def optimize_system_performance(self):
+        """Optimize system performance based on available hardware."""
+        if self.use_gpu:
+            torch.cuda.set_per_process_memory_fraction(self.gpu_memory_fraction)
+        torch.set_num_threads(self.max_threads)
