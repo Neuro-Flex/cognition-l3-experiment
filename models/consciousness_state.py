@@ -28,11 +28,11 @@ class CognitiveProcessIntegration(nn.Module):
     def forward(self, inputs: Dict[str, torch.Tensor], deterministic: bool = True):
         processed_modalities = {}
         for modality, x in inputs.items():
-            x = nn.LayerNorm(x.size()[2:])(x)
+            x = self.layer_norm(x)
             x = nn.Linear(x.size(-1), self.hidden_dim)(x)
             x = nn.GELU()(x)
             if not deterministic:
-                x = nn.Dropout(p=self.dropout_rate)(x)
+                x = self.dropout(x)
             processed_modalities[modality] = x
 
         # Cross-modal attention integration
@@ -60,7 +60,7 @@ class CognitiveProcessIntegration(nn.Module):
             integrated_features.append(integrated)
         # Final integration across all modalities
         final_state = torch.mean(torch.stack(integrated_features), dim=0)
-        return final_state
+        return final_state, attention_maps
 
 class ConsciousnessStateManager(nn.Module):
     """
@@ -108,7 +108,7 @@ class ConsciousnessStateManager(nn.Module):
             integrated_features.append(integrated)
         # Final integration across all modalities
         final_state = torch.mean(torch.stack(integrated_features), dim=0)
-        return final_state
+        return final_state, attention_maps
 
     def get_rl_loss(self, state_value, reward, next_state_value, gamma=0.99):
         """

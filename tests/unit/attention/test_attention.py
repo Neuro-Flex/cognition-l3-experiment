@@ -38,8 +38,8 @@ class TestAttentionMechanisms(ConsciousnessTestBase):
     def test_scaled_dot_product(self, attention_module, batch_size, seq_length, hidden_dim):
         """Test scaled dot-product attention computation."""
         # Create inputs
-        inputs_q = self.create_inputs(self.seed, batch_size, seq_length, hidden_dim)
-        inputs_kv = self.create_inputs(self.seed, batch_size, seq_length, hidden_dim)
+        inputs_q = torch.randn(batch_size, seq_length, hidden_dim)
+        inputs_kv = torch.randn(batch_size, seq_length, hidden_dim)
 
         # Initialize and run forward pass
         attention_module.eval()
@@ -55,8 +55,8 @@ class TestAttentionMechanisms(ConsciousnessTestBase):
     def test_attention_mask(self, attention_module, batch_size, seq_length, hidden_dim):
         """Test attention mask handling."""
         # Create inputs and mask
-        inputs_q = self.create_inputs(self.seed, batch_size, seq_length, hidden_dim)
-        inputs_kv = self.create_inputs(self.seed, batch_size, seq_length, hidden_dim)
+        inputs_q = torch.randn(batch_size, seq_length, hidden_dim)
+        inputs_kv = torch.randn(batch_size, seq_length, hidden_dim)
         mask = torch.ones((batch_size, seq_length), dtype=torch.bool)
         mask[:, seq_length//2:] = False  # Mask out second half
 
@@ -70,8 +70,8 @@ class TestAttentionMechanisms(ConsciousnessTestBase):
 
     def test_consciousness_broadcasting(self, attention_module, batch_size, seq_length, hidden_dim):
         """Test consciousness-aware broadcasting."""
-        inputs_q = self.create_inputs(self.seed, batch_size, seq_length, hidden_dim)
-        inputs_kv = self.create_inputs(self.seed, batch_size, seq_length, hidden_dim)
+        inputs_q = torch.randn(batch_size, seq_length, hidden_dim)
+        inputs_kv = torch.randn(batch_size, seq_length, hidden_dim)
 
         # Test with and without dropout
         attention_module.eval()
@@ -91,7 +91,7 @@ class TestAttentionMechanisms(ConsciousnessTestBase):
             dropout_rate=0.1
         )
 
-        inputs = self.create_inputs(self.seed, batch_size, seq_length, hidden_dim)
+        inputs = torch.randn(batch_size, seq_length, hidden_dim)
 
         # Initialize and run forward pass
         workspace.eval()
