@@ -161,6 +161,61 @@ class EnvironmentTests(unittest.TestCase):
         except Exception as e:
             self.fail(f"Basic torch operations failed: {str(e)}")
 
+    def test_environment_configurations(self):
+        """Test different environment configurations"""
+        import torch
+
+        configurations = [
+            {'device': 'cpu', 'dtype': torch.float32},
+            {'device': 'cpu', 'dtype': torch.float64},
+        ]
+
+        if torch.cuda.is_available():
+            configurations.extend([
+                {'device': f'cuda:{i}', 'dtype': torch.float32} for i in range(torch.cuda.device_count())
+            ])
+
+        for config in configurations:
+            try:
+                x = torch.ones((1000, 1000), device=config['device'], dtype=config['dtype'])
+                self.assertEqual(x.dtype, config['dtype'], f"Dtype mismatch on {config['device']}")
+                del x
+                if 'cuda' in config['device']:
+                    torch.cuda.empty_cache()
+            except Exception as e:
+                self.fail(f"Configuration test failed on {config['device']} with dtype {config['dtype']}: {str(e)}")
+            logger.info(f"Configuration test passed for {config['device']} with dtype {config['dtype']}")
+
+    def test_dependency_installation(self):
+        """Ensure all dependencies are correctly installed and compatible"""
+        for package, required_version in self.required_packages.items():
+            installed_version = self.installed_packages.get(package)
+            self.assertIsNotNone(installed_version, f"{package} is not installed")
+            self.assertGreaterEqual(version.parse(installed_version), version.parse(required_version),
+                                    f"{package} version {installed_version} is too old. Minimum required is {required_version}")
+
+    def test_error_handling_and_logging(self):
+        """Improve error handling and logging for better debugging"""
+        try:
+            import torch
+            x = torch.ones((1000, 1000), device='cpu')
+            self.assertEqual(x.shape, (1000, 1000))
+        except Exception as e:
+            logger.error(f"Error during tensor creation: {str(e)}")
+            self.fail(f"Error during tensor creation: {str(e)}")
+
+        try:
+            import torch
+            if torch.cuda.is_available():
+                x = torch.ones((1000, 1000), device='cuda:0')
+                self.assertEqual(x.shape, (1000, 1000))
+        except RuntimeError as e:
+            logger.error(f"CUDA error during tensor creation: {str(e)}")
+            self.fail(f"CUDA error during tensor creation: {str(e)}")
+        except Exception as e:
+            logger.error(f"Unexpected error during tensor creation: {str(e)}")
+            self.fail(f"Unexpected error during tensor creation: {str(e)}")
+
 if __name__ == '__main__':
     logger.info("Starting environment tests")
     logger.info(f"Platform: {platform.platform()}")

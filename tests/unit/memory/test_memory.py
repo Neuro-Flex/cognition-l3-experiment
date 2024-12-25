@@ -43,6 +43,7 @@ class TestMemoryComponents(ConsciousnessTestBase):
         return InformationIntegration(
             hidden_dim=hidden_dim,
             num_modules=4,
+            input_dim=hidden_dim,
             dropout_rate=0.1
         ).to(device)
 
@@ -165,3 +166,62 @@ class TestMemoryComponents(ConsciousnessTestBase):
 
         # Verify shapes
         self.assert_output_shape(new_hidden_state, (batch_size, hidden_dim))
+
+    def test_memory_dropout(self, working_memory, device, batch_size, seq_length, hidden_dim):
+        """Test memory behavior with dropout."""
+        inputs = torch.randn(batch_size, seq_length, hidden_dim, device=device)
+        initial_state = torch.zeros(batch_size, hidden_dim, device=device)
+
+        working_memory.train()  # Enable dropout
+        output1, final_state1 = working_memory(inputs, initial_state, deterministic=False)
+        output2, final_state2 = working_memory(inputs, initial_state, deterministic=False)
+
+        # Outputs should differ due to dropout
+        assert not torch.allclose(output1, output2)
+
+        working_memory.eval()  # Disable dropout
+        with torch.no_grad():
+            output3, final_state3 = working_memory(inputs, initial_state, deterministic=True)
+            output4, final_state4 = working_memory(inputs, initial_state, deterministic=True)
+
+        # Outputs should be identical without dropout
+        assert torch.allclose(output3, output4)
+
+    def test_memory_gradients(self, working_memory, device, batch_size, seq_length, hidden_dim):
+        """Test gradient computation in working memory."""
+        inputs = torch.randn(batch_size, seq_length, hidden_dim, device=device)
+        initial_state = torch.zeros(batch_size, hidden_dim, device=device, requires_grad=True)
+
+        working_memory.train()
+        output, final_state = working_memory(inputs, initial_state, deterministic=False)
+        loss = output.sum()
+        loss.backward()
+
+        # Gradients should be computed for the initial state
+        assert initial_state.grad is not None
+
+    def test_memory_save_load(self, working_memory, device, batch_size, seq_length, hidden_dim, tmp_path):
+        """Test saving and loading the working memory module."""
+        inputs = torch.randn(batch_size, seq_length, hidden_dim, device=device)
+        initial_state = torch.zeros(batch_size, hidden_dim, device=device)
+
+        working_memory.eval()
+        output, final_state = working_memory(inputs, initial_state, deterministic=True)
+
+        # Save working memory
+        model_path = tmp_path / "working_memory.pth"
+        torch.save(working_memory.state_dict(), model_path)
+
+        # Load working memory
+        loaded_memory = WorkingMemory(
+            input_dim=hidden_dim,
+            hidden_dim=hidden_dim,
+            dropout_rate=0.1
+        ).to(device)
+        loaded_memory.load_state_dict(torch.load(model_path))
+        loaded_memory.eval()
+
+        # Verify loaded model produces the same output
+        loaded_output, loaded_final_state = loaded_memory(inputs, initial_state, deterministic=True)
+        assert torch.allclose(output, loaded_output)
+        assert torch.allclose(final_state, loaded_final_state)

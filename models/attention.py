@@ -8,78 +8,58 @@ class ConsciousnessAttention(nn.Module):
     Multi-head attention mechanism for consciousness modeling based on Global Workspace Theory.
     Implements scaled dot-product attention with consciousness-aware broadcasting.
     """
-    def __init__(self, num_heads: int, head_dim: int, dropout_rate: float = 0.1, attention_dropout_rate: float = 0.1):
+    def __init__(self, num_heads: int, head_dim: int, dropout_rate: float = 0.1):
         super().__init__()
+        self.hidden_dim = num_heads * head_dim
         self.num_heads = num_heads
         self.head_dim = head_dim
-        self.dropout_rate = dropout_rate
-        self.attention_dropout_rate = attention_dropout_rate
-        self.depth = num_heads * head_dim
+        self.scale = head_dim ** -0.5
 
         # Linear projections
-        self.query = nn.Linear(self.depth, self.depth)
-        self.key = nn.Linear(self.depth, self.depth)
-        self.value = nn.Linear(self.depth, self.depth)
-        self.output_projection = nn.Linear(self.depth, self.depth)
-        
-        # Dropouts
-        self.attn_dropout = nn.Dropout(attention_dropout_rate)
+        self.query = nn.Linear(self.hidden_dim, self.hidden_dim)
+        self.key = nn.Linear(self.hidden_dim, self.hidden_dim)
+        self.value = nn.Linear(self.hidden_dim, self.hidden_dim)
+
+        # Dropout layers
+        self.attn_dropout = nn.Dropout(dropout_rate)
         self.output_dropout = nn.Dropout(dropout_rate)
 
-    def forward(self, inputs_q: torch.Tensor, inputs_kv: torch.Tensor, 
-                mask: Optional[torch.Tensor] = None, 
-                training: bool = True, 
-                deterministic: Optional[bool] = None) -> Tuple[torch.Tensor, torch.Tensor]:
-        """
-        Forward pass of consciousness attention.
-        Args:
-            inputs_q: Query inputs
-            inputs_kv: Key-value inputs
-            mask: Optional attention mask
-            training: Whether in training mode (controls dropout)
-            deterministic: Optional override for training mode
-        """
-        batch_size = inputs_q.size(0)
+    def forward(self, query, key_value, mask=None, training=None):
+        """Forward pass of consciousness attention mechanism."""
+        # Input validation
+        if query.size(0) == 0 or query.size(1) == 0 or query.size(2) == 0:
+            raise ValueError("Query tensor cannot be empty")
+        if key_value.size(0) == 0 or key_value.size(1) == 0 or key_value.size(2) == 0:
+            raise ValueError("Key/Value tensor cannot be empty")
+            
+        # Validate input dimensions
+        if query.size(-1) != self.hidden_dim or key_value.size(-1) != self.hidden_dim:
+            raise ValueError(f"Expected input dimension {self.hidden_dim}, got query: {query.size(-1)}, key/value: {key_value.size(-1)}")
+            
+        batch_size = query.size(0)
         
-        # Use deterministic to override training mode if provided
-        is_training = training if deterministic is None else not deterministic
-        
-        # Linear projections
-        query = self.query(inputs_q)
-        key = self.key(inputs_kv)
-        value = self.value(inputs_kv)
-
-        # Reshape for multi-head attention
-        query = query.view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
-        key = key.view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
-        value = value.view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
+        # Linear projections and reshape for multi-head attention
+        q = self.query(query).view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
+        k = self.key(key_value).view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
+        v = self.value(key_value).view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
 
         # Scaled dot-product attention
-        depth_scaling = float(self.head_dim) ** -0.5
-        attention_logits = torch.matmul(query, key.transpose(-2, -1)) * depth_scaling
+        scores = torch.matmul(q, k.transpose(-2, -1)) * self.scale
 
         if mask is not None:
-            mask = mask.unsqueeze(1).unsqueeze(2)
-            attention_logits = attention_logits.masked_fill(~mask, float('-inf'))
+            # Expand mask for multiple heads
+            expanded_mask = mask.unsqueeze(1).unsqueeze(2)
+            scores = scores.masked_fill(~expanded_mask, float('-inf'))
 
-        attention_weights = F.softmax(attention_logits, dim=-1)
+        attention_weights = F.softmax(scores, dim=-1)
+        attention_weights = self.attn_dropout(attention_weights)
+
+        # Apply attention weights to values
+        output = torch.matmul(attention_weights, v)
         
-        if is_training:
-            attention_weights = self.attn_dropout(attention_weights)
-
-        # Compute attention output
-        attention_output = torch.matmul(attention_weights, value)
-        
-        # Reshape and project output
-        attention_output = attention_output.transpose(1, 2).contiguous()
-        attention_output = attention_output.view(batch_size, -1, self.depth)
-        output = self.output_projection(attention_output)
-
-        if is_training:
-            output = self.output_dropout(output)
-
-        # Residual connection
-        output = output + inputs_q
+        # Reshape back
+        output = output.transpose(1, 2).contiguous().view(batch_size, -1, self.hidden_dim)
+        output = self.output_dropout(output)
 
         return output, attention_weights
 
@@ -118,6 +98,13 @@ class GlobalWorkspace(nn.Module):
                 memory_state: Optional[torch.Tensor] = None,
                 deterministic: bool = True) -> Tuple[torch.Tensor, torch.Tensor]:
         """Forward pass with optional deterministic mode."""
+        # Input validation
+        if inputs.size(0) == 0 or inputs.size(1) == 0 or inputs.size(2) == 0:
+            raise ValueError("Input tensor cannot be empty")
+            
+        if inputs.size(-1) != self.hidden_dim:
+            raise ValueError(f"Expected input dimension {self.hidden_dim}, got {inputs.size(-1)}")
+
         # Layer normalization and attention
         x = self.layer_norm1(inputs)
         attended_output, attention_weights = self.attention(

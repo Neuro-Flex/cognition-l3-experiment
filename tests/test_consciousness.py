@@ -117,6 +117,63 @@ class TestConsciousnessModel(ConsciousnessTestBase):
         assert torch.all(attention_weights >= 0)
         assert torch.allclose(torch.sum(attention_weights, dim=-1), torch.tensor(1.0))
 
+    def test_model_edge_cases(self, model, deterministic):
+        """Test edge cases for the consciousness model."""
+        # Test with empty input
+        empty_input = {}
+        with pytest.raises(ValueError):
+            model(empty_input, deterministic=deterministic)
+
+        # Test with mismatched input dimensions
+        mismatched_input = {
+            'attention': torch.randn(2, 8, 128),
+            'memory': torch.randn(2, 10, 128)  # Different sequence length
+        }
+        with pytest.raises(ValueError):
+            model(mismatched_input, deterministic=deterministic)
+
+    def test_model_dropout(self, model, sample_input):
+        """Test model behavior with dropout."""
+        model.train()  # Enable dropout
+        state = torch.zeros(sample_input['attention'].shape[0], model.hidden_dim)
+        output1, _ = model(sample_input, initial_state=state, deterministic=False)
+        output2, _ = model(sample_input, initial_state=state, deterministic=False)
+        assert not torch.allclose(output1, output2), "Outputs should differ due to dropout"
+
+    def test_model_gradients(self, model, sample_input):
+        """Test gradient computation in the model."""
+        model.train()
+        state = torch.zeros(sample_input['attention'].shape[0], model.hidden_dim, requires_grad=True)
+        output, _ = model(sample_input, initial_state=state, deterministic=False)
+        loss = output.sum()
+        loss.backward()
+        assert state.grad is not None, "Gradients should be computed for the initial state"
+
+    def test_model_save_load(self, model, sample_input, tmp_path):
+        """Test saving and loading the model."""
+        model.eval()
+        state = torch.zeros(sample_input['attention'].shape[0], model.hidden_dim)
+        output, _ = model(sample_input, initial_state=state, deterministic=True)
+
+        # Save model
+        model_path = tmp_path / "consciousness_model.pth"
+        torch.save(model.state_dict(), model_path)
+
+        # Load model
+        loaded_model = ConsciousnessModel(
+            hidden_dim=model.hidden_dim,
+            num_heads=model.num_heads,
+            num_layers=model.num_layers,
+            num_states=model.num_states,
+            dropout_rate=model.dropout_rate,
+            input_dim=model.input_dim
+        )
+        loaded_model.load_state_dict(torch.load(model_path))
+        loaded_model.eval()
+
+        # Verify loaded model produces the same output
+        loaded_output, _ = loaded_model(sample_input, initial_state=state, deterministic=True)
+        assert torch.allclose(output, loaded_output), "Loaded model output should match saved model output"
+
 if __name__ == '__main__':
     pytest.main([__file__])
-

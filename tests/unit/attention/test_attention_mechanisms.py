@@ -98,6 +98,22 @@ class TestConsciousnessAttention:
 
         assert output.shape == inputs_q.shape  # Adjusted expected shape
 
+    def test_attention_edge_cases(self, attention_module):
+        batch_size = 2
+        seq_length = 8
+        input_dim = 128
+
+        # Test with empty input
+        empty_input = torch.empty(batch_size, seq_length, input_dim)
+        with pytest.raises(ValueError):
+            attention_module(empty_input, empty_input)
+
+        # Test with mismatched input dimensions
+        mismatched_input_q = torch.randn(batch_size, seq_length, input_dim)
+        mismatched_input_kv = torch.randn(batch_size, seq_length, input_dim // 2)
+        with pytest.raises(ValueError):
+            attention_module(mismatched_input_q, mismatched_input_kv)
+
 class TestGlobalWorkspace:
     @pytest.fixture
     def workspace_module(self):
@@ -126,3 +142,37 @@ class TestGlobalWorkspace:
         # Test residual connection
         # Output should not be too different from input due to residual
         assert torch.mean(torch.abs(output - inputs)) < 1.2  # Adjust threshold
+
+    def test_global_workspace_integration(self, workspace_module):
+        batch_size = 2
+        seq_length = 8
+        input_dim = 128
+
+        inputs = torch.randn(batch_size, seq_length, input_dim)
+        workspace_module.eval()  # Set to evaluation mode
+
+        with torch.no_grad():
+            output, attention_weights = workspace_module(inputs)
+
+        # Test output shapes
+        assert output.shape == inputs.shape
+        assert attention_weights.shape == (batch_size, 4, seq_length, seq_length)
+
+        # Test residual connection
+        # Output should not be too different from input due to residual
+        assert torch.mean(torch.abs(output - inputs)) < 1.2  # Adjust threshold
+
+    def test_global_workspace_edge_cases(self, workspace_module):
+        batch_size = 2
+        seq_length = 8
+        input_dim = 128
+
+        # Test with empty input
+        empty_input = torch.empty(batch_size, seq_length, input_dim)
+        with pytest.raises(ValueError):
+            workspace_module(empty_input)
+
+        # Test with mismatched input dimensions
+        mismatched_input = torch.randn(batch_size, seq_length, input_dim // 2)
+        with pytest.raises(ValueError):
+            workspace_module(mismatched_input)

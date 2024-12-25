@@ -130,3 +130,32 @@ class TestConsciousnessStateManager:
         # Energy costs should stabilize
         energy_diffs = torch.diff(torch.tensor(energies, device=device))
         assert torch.mean(torch.abs(energy_diffs)).item() < 0.1
+
+    def test_energy_efficiency(self, device, state_manager):
+        batch_size = 2
+        hidden_dim = 64
+
+        state = torch.randn(batch_size, hidden_dim, device=device)
+        inputs = torch.randn(batch_size, hidden_dim, device=device)
+
+        state_manager.eval()
+        with torch.no_grad():
+            new_state, metrics = state_manager(state, inputs, threshold=0.5, deterministic=True)
+
+        # Test energy cost
+        assert torch.is_tensor(metrics['energy_cost'])
+        assert metrics['energy_cost'].item() >= 0.0
+
+    def test_state_value_estimation(self, device, state_manager):
+        batch_size = 2
+        hidden_dim = 64
+
+        state = torch.randn(batch_size, hidden_dim, device=device)
+        inputs = torch.randn(batch_size, hidden_dim, device=device)
+
+        state_manager.eval()
+        with torch.no_grad():
+            new_state, metrics = state_manager(state, inputs, threshold=0.5, deterministic=True)
+
+        # Test state value
+        assert metrics['state_value'].shape == (batch_size, 1)
