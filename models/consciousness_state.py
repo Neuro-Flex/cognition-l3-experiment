@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
-from typing import Dict
-
+from typing import Dict, Optional, Tuple
 
 class CognitiveProcessIntegration(nn.Module):
     """
@@ -12,6 +11,9 @@ class CognitiveProcessIntegration(nn.Module):
         self.hidden_dim = hidden_dim
         self.num_heads = num_heads
         self.dropout_rate = dropout_rate
+        
+        # Input projection layer
+        self.input_projection = nn.Linear(32, hidden_dim)  # Assuming input_dim=32
         
         # Add multihead attention
         self.attention = nn.MultiheadAttention(
@@ -28,9 +30,9 @@ class CognitiveProcessIntegration(nn.Module):
     def forward(self, inputs: Dict[str, torch.Tensor], deterministic: bool = True):
         processed_modalities = {}
         for modality, x in inputs.items():
-            x = self.layer_norm(x)
-            x = nn.Linear(x.size(-1), self.hidden_dim)(x)
-            x = nn.GELU()(x)
+            # Project input to hidden dimension first
+            x = self.input_projection(x)
+            x = self.layer_norm(x)  # Now x has shape [batch, seq_len, hidden_dim]
             if not deterministic:
                 x = self.dropout(x)
             processed_modalities[modality] = x
@@ -66,19 +68,39 @@ class ConsciousnessStateManager(nn.Module):
     """
     Manages consciousness state transitions with adaptive memory gates and RL optimization.
     """
-    def __init__(self, input_dim, hidden_dim):
+    def __init__(self, hidden_dim: int, input_dim: Optional[int] = None, 
+                 num_states: int = 4, dropout_rate: float = 0.1):
         super().__init__()
+        self.hidden_dim = hidden_dim
+        self.input_dim = input_dim or hidden_dim
+        self.num_states = num_states
+        self.dropout_rate = dropout_rate
+
+        # Core components
         self.layer_norm = nn.LayerNorm(hidden_dim)
         self.attention = nn.MultiheadAttention(hidden_dim, num_heads=8)
         self.gate_network = nn.Linear(hidden_dim, hidden_dim)
         
+        # State management
+        self.state_embedding = nn.Parameter(torch.randn(num_states, hidden_dim))
+        self.state_transition = nn.Linear(hidden_dim * 2, num_states)
+        
+        # Optional input projection
+        self.input_projection = None
+        if input_dim != hidden_dim:
+            self.input_projection = nn.Linear(input_dim, hidden_dim)
+
     def forward(self, inputs: Dict[str, torch.Tensor], deterministic: bool = True):
+        # Project inputs if needed
+        if self.input_projection is not None:
+            processed_inputs = {k: self.input_projection(v) for k, v in inputs.items()}
+        else:
+            processed_inputs = inputs
+
+        # Process modalities
         processed_modalities = {}
-        for modality, x in inputs.items():
-            # Apply layer normalization with proper initialization
+        for modality, x in processed_inputs.items():
             x = self.layer_norm(x)
-            x = nn.Linear(x.size(-1), self.hidden_dim)(x)
-            x = nn.GELU()(x)
             if not deterministic:
                 x = nn.Dropout(p=self.dropout_rate)(x)
             processed_modalities[modality] = x

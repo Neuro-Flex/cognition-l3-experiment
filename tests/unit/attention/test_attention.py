@@ -44,7 +44,11 @@ class TestAttentionMechanisms(ConsciousnessTestBase):
         # Initialize and run forward pass
         attention_module.eval()
         with torch.no_grad():
-            output, attention_weights = attention_module(inputs_q, inputs_kv, deterministic=True)
+            output, attention_weights = attention_module(
+                inputs_q, 
+                inputs_kv,
+                training=False  # Use training=False instead of deterministic=True
+            )
 
         # Verify output shape
         self.assert_output_shape(output, (batch_size, seq_length, hidden_dim))
@@ -63,7 +67,12 @@ class TestAttentionMechanisms(ConsciousnessTestBase):
         # Initialize and run forward pass
         attention_module.eval()
         with torch.no_grad():
-            output, attention_weights = attention_module(inputs_q, inputs_kv, mask=mask, deterministic=True)
+            output, attention_weights = attention_module(
+                inputs_q, 
+                inputs_kv,
+                mask=mask,
+                training=False
+            )
 
         # Verify masked attention weights are zero
         assert torch.allclose(attention_weights[..., seq_length//2:], torch.zeros_like(attention_weights[..., seq_length//2:]))
@@ -76,8 +85,8 @@ class TestAttentionMechanisms(ConsciousnessTestBase):
         # Test with and without dropout
         attention_module.eval()
         with torch.no_grad():
-            output1, _ = attention_module(inputs_q, inputs_kv, deterministic=True)
-            output2, _ = attention_module(inputs_q, inputs_kv, deterministic=True)
+            output1, _ = attention_module(inputs_q, inputs_kv, training=False)
+            output2, _ = attention_module(inputs_q, inputs_kv, training=False)
 
         # Outputs should be identical when deterministic
         assert torch.allclose(output1, output2, rtol=1e-5)

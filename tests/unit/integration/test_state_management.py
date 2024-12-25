@@ -16,6 +16,7 @@ class TestConsciousnessStateManager:
     def state_manager(self, device):
         return ConsciousnessStateManager(
             hidden_dim=64,
+            input_dim=32,  # Match input dimension from tests
             num_states=4,
             dropout_rate=0.1
         ).to(device)

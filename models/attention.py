@@ -27,8 +27,22 @@ class ConsciousnessAttention(nn.Module):
         self.output_dropout = nn.Dropout(dropout_rate)
 
     def forward(self, inputs_q: torch.Tensor, inputs_kv: torch.Tensor, 
-                mask: Optional[torch.Tensor] = None, training: bool = True) -> Tuple[torch.Tensor, torch.Tensor]:
+                mask: Optional[torch.Tensor] = None, 
+                training: bool = True, 
+                deterministic: Optional[bool] = None) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Forward pass of consciousness attention.
+        Args:
+            inputs_q: Query inputs
+            inputs_kv: Key-value inputs
+            mask: Optional attention mask
+            training: Whether in training mode (controls dropout)
+            deterministic: Optional override for training mode
+        """
         batch_size = inputs_q.size(0)
+        
+        # Use deterministic to override training mode if provided
+        is_training = training if deterministic is None else not deterministic
         
         # Linear projections
         query = self.query(inputs_q)
@@ -50,7 +64,7 @@ class ConsciousnessAttention(nn.Module):
 
         attention_weights = F.softmax(attention_logits, dim=-1)
         
-        if training:
+        if is_training:
             attention_weights = self.attn_dropout(attention_weights)
 
         # Compute attention output
@@ -61,7 +75,7 @@ class ConsciousnessAttention(nn.Module):
         attention_output = attention_output.view(batch_size, -1, self.depth)
         output = self.output_projection(attention_output)
 
-        if training:
+        if is_training:
             output = self.output_dropout(output)
 
         # Residual connection
