@@ -16,17 +16,11 @@ class EnvironmentTests(unittest.TestCase):
         """Test all core framework imports"""
         try:
             import torch
-            try:
-                import torchvision
-            except ImportError:
-                print("torchvision is not available")
-            try:
-                import torchaudio
-            except ImportError:
-                print("torchaudio is not available")
+            import torchvision
+            import torchaudio
             _ = torch.__version__
-            _ = torchvision.__version__ if 'torchvision' in sys.modules else 'N/A'
-            _ = torchaudio.__version__ if 'torudio' in sys.modules else 'N/A'
+            _ = torchvision.__version__
+            _ = torchaudio.__version__
             self.assertTrue(True, "All core imports successful")
         except ImportError as e:
             self.fail(f"Failed to import core frameworks: {str(e)}")
@@ -57,19 +51,13 @@ class EnvironmentTests(unittest.TestCase):
     def test_framework_versions(self):
         """Verify framework versions"""
         import torch
-        try:
-            import torchvision
-        except ImportError:
-            print("torchvision is not available")
-        try:
-            import torchaudio
-        except ImportError:
-            print("torchaudio is not available")
+        import torchvision
+        import torchaudio
 
         versions = {
             'torch': torch.__version__,
-            'torchvision': torchvision.__version__ if 'torchvision' in sys.modules else 'N/A',
-            'torchaudio': torchaudio.__version__ if 'torchaudio' in sys.modules else 'N/A'
+            'torchvision': torchvision.__version__,
+            'torchaudio': torchaudio.__version__
         }
 
         print("\nFramework versions:")
