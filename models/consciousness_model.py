@@ -280,7 +280,24 @@ class CognitiveProcessIntegration(nn.Module):
         """Process multiple modalities and generate cross-modal attention maps."""
         if not inputs:
             raise ValueError("Empty input dictionary")
-            
+
+        # Get dimensions from largest input tensor
+        seq_lengths = {name: tensor.size(1) if tensor.dim() > 1 else 1 
+                      for name, tensor in inputs.items()}
+        max_seq_len = max(seq_lengths.values())
+        
+        # Pad all inputs to match max sequence length
+        processed_inputs = {}
+        for name, tensor in inputs.items():
+            if tensor.dim() == 2:  # [batch, features]
+                tensor = tensor.unsqueeze(1)  # Add sequence dimension
+            if tensor.size(1) < max_seq_len:
+                # Pad sequence dimension to match max length
+                pad_size = max_seq_len - tensor.size(1)
+                tensor = torch.nn.functional.pad(tensor, (0, 0, 0, pad_size))
+            processed_inputs[name] = tensor
+
+        # Continue with regular processing using padded inputs
         # Get dimensions from first input tensor
         first_tensor = next(iter(inputs.values()))
         batch_size = first_tensor.size(0)

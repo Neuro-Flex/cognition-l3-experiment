@@ -28,9 +28,15 @@ class ConsciousnessAttention(nn.Module):
         """Forward pass of consciousness attention mechanism."""
         # Input validation
         if query.size(0) == 0 or query.size(1) == 0 or query.size(2) == 0:
-            raise ValueError("Query tensor cannot be empty")
+            raise ValueError("Empty input tensor")
         if key_value.size(0) == 0 or key_value.size(1) == 0 or key_value.size(2) == 0:
-            raise ValueError("Key/Value tensor cannot be empty")
+            raise ValueError("Empty input tensor")
+        if query.size(0) != key_value.size(0):
+            raise ValueError("Batch size mismatch between query and key_value")
+        if query.size(1) != key_value.size(1):
+            raise ValueError("Sequence length mismatch between query and key_value")
+        if query.nelement() == 0 or key_value.nelement() == 0:
+            raise ValueError("Empty input tensor")
             
         # Validate input dimensions
         if query.size(-1) != self.hidden_dim or key_value.size(-1) != self.hidden_dim:
@@ -94,30 +100,48 @@ class GlobalWorkspace(nn.Module):
             nn.Dropout(dropout_rate)
         )
 
-    def forward(self, inputs: torch.Tensor, 
-                memory_state: Optional[torch.Tensor] = None,
+    def _process_attention(self, inputs: torch.Tensor,
+                         memory_state: Optional[torch.Tensor] = None,
+                         deterministic: bool = True) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Process inputs through attention mechanism with residual connection."""
+        # Use attention mechanism
+        attention_output, attention_weights = self.attention(
+            query=inputs,
+            key_value=memory_state if memory_state is not None else inputs
+        )
+        
+        # First residual connection and layer norm
+        attention_output = inputs + attention_output
+        normalized = self.layer_norm2(attention_output)
+        
+        # Feed-forward network with residual
+        ff_output = self.ff_network(normalized)
+        output = attention_output + ff_output
+        
+        return output, attention_weights
+
+    def forward(self, inputs: torch.Tensor,
+                memory_state: Optional[torch.Tensor] = None, 
                 deterministic: bool = True) -> Tuple[torch.Tensor, torch.Tensor]:
         """Forward pass with optional deterministic mode."""
         # Input validation
-        if inputs.size(0) == 0 or inputs.size(1) == 0 or inputs.size(2) == 0:
-            raise ValueError("Input tensor cannot be empty")
+        if inputs.numel() == 0:
+            raise ValueError("Empty input tensor")
             
-        if inputs.size(-1) != self.hidden_dim:
-            raise ValueError(f"Expected input dimension {self.hidden_dim}, got {inputs.size(-1)}")
-
-        # Layer normalization and attention
-        x = self.layer_norm1(inputs)
-        attended_output, attention_weights = self.attention(
-            x, x, mask=None, 
-            training=not deterministic  # Convert deterministic to training mode
-        )
+        # Get input dimensions
+        batch_size, *dims = inputs.size()
         
-        # First residual connection
-        x = inputs + attended_output
+        # Reshape input if needed to match expected 3D shape [batch, seq, features]
+        if len(dims) == 1:
+            inputs = inputs.unsqueeze(1)  # Add sequence dimension
+        elif len(dims) > 2:
+            # Flatten all dimensions after batch into sequence dimension
+            inputs = inputs.view(batch_size, -1, dims[-1])
+            
+        # Apply layer normalization
+        normalized = self.layer_norm1(inputs)
         
-        # Feed-forward network with residual connection
-        y = self.layer_norm2(x)
-        y = self.ff_network(y) if not deterministic else self.ff_network.eval()(y)
-        output = x + y
-
+        # Process through attention layers
+        output, attention_weights = self._process_attention(normalized, memory_state, deterministic)
+        
         return output, attention_weights

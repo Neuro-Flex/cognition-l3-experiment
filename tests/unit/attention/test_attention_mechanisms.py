@@ -103,16 +103,27 @@ class TestConsciousnessAttention:
         seq_length = 8
         input_dim = 128
 
-        # Test with empty input
-        empty_input = torch.empty(batch_size, seq_length, input_dim)
-        with pytest.raises(ValueError):
+        # Test with empty input (zero sized tensor)
+        empty_input = torch.zeros((batch_size, 0, input_dim))
+        with pytest.raises(ValueError, match="Empty input tensor"):
             attention_module(empty_input, empty_input)
 
-        # Test with mismatched input dimensions
-        mismatched_input_q = torch.randn(batch_size, seq_length, input_dim)
-        mismatched_input_kv = torch.randn(batch_size, seq_length, input_dim // 2)
-        with pytest.raises(ValueError):
-            attention_module(mismatched_input_q, mismatched_input_kv)
+        # Test with zero dimension tensor
+        zero_dim = torch.tensor([])
+        with pytest.raises(ValueError, match="Empty input tensor"):
+            attention_module(zero_dim, zero_dim)
+
+        # Test with mismatched batch sizes
+        query = torch.randn(2, seq_length, input_dim)
+        key_value = torch.randn(3, seq_length, input_dim)
+        with pytest.raises(ValueError, match="Batch size mismatch"):
+            attention_module(query, key_value)
+
+        # Test with mismatched sequence lengths
+        query = torch.randn(batch_size, seq_length, input_dim)
+        key_value = torch.randn(batch_size, seq_length + 1, input_dim)
+        with pytest.raises(ValueError, match="Sequence length mismatch"):
+            attention_module(query, key_value)
 
 class TestGlobalWorkspace:
     @pytest.fixture
@@ -167,12 +178,12 @@ class TestGlobalWorkspace:
         seq_length = 8
         input_dim = 128
 
-        # Test with empty input
-        empty_input = torch.empty(batch_size, seq_length, input_dim)
-        with pytest.raises(ValueError):
+        # Test with empty input (zero sized tensor)
+        empty_input = torch.zeros((batch_size, 0, input_dim))
+        with pytest.raises(ValueError, match="Empty input tensor"):
             workspace_module(empty_input)
 
-        # Test with mismatched input dimensions
-        mismatched_input = torch.randn(batch_size, seq_length, input_dim // 2)
-        with pytest.raises(ValueError):
-            workspace_module(mismatched_input)
+        # Test with zero dimension tensor
+        zero_dim = torch.tensor([])
+        with pytest.raises(ValueError, match="Empty input tensor"):
+            workspace_module(zero_dim)

@@ -114,9 +114,11 @@ class TestBigBenchReasoning:
                     torch.manual_seed(i)  # Ensure different random patterns
                     input_embedding = torch.randn(1, 64, 512, device=device) * (i + 1)  # Vary input scale
                     if last_state is not None:
-                        state = last_state.unsqueeze(0)
+                        # Expand state to match sequence length
+                        state = last_state.unsqueeze(0).expand(-1, 64, -1)
                     else:
-                        state = torch.zeros(1, 1, consciousness_model.hidden_dim, device=device)
+                        # Initialize state with correct sequence length
+                        state = torch.zeros(1, 64, consciousness_model.hidden_dim, device=device)
 
                     output, metrics = consciousness_model(
                         {
@@ -156,7 +158,8 @@ class TestBigBenchReasoning:
                     torch.manual_seed(i)
                     # Use consistent sequence length and vary input scale
                     task_embedding = torch.randn(1, 64, 512, device=device) * (i + 1)  # Vary input scale
-                    base_state = torch.randn(1, 1, consciousness_model.hidden_dim, device=device)
+                    # Initialize base_state with correct sequence length
+                    base_state = torch.randn(1, 64, consciousness_model.hidden_dim, device=device)
 
                     output, metrics = consciousness_model(
                         {
