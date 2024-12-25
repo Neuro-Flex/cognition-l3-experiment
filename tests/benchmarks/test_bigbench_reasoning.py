@@ -123,12 +123,11 @@ class TestBigBenchReasoning:
                             'textual': input_embedding,
                             'visual': torch.zeros(1, 64, 512, device=device),  # Added dummy 'visual' input with matching sequence length
                             'state': state
-                        consciousness_threshold=0.1 + i*0.3  # Increase threshold with complexity
-                    )
-                        consciousness_threshold=0.1 + i*0.3  # Increase threshold with complexity
+                        },
+                        consciousness_threshold=0.1 + i*0.3,  # Increase threshold with complexity
                     )
                     phi_values.append(metrics['phi'])
-                    last_state = output.squeeze(0)
+                    last_state = output
 
             # Test adaptation capability with more lenient thresholds
             phi_tensor = torch.cat(phi_values)
