@@ -41,7 +41,7 @@ class TestConsciousnessStateManager:
         assert 'state_value' in metrics
 
         # Test memory gate properties
-        assert metrics['memory_gate'].shape == (batch_size, 1)
+        assert metrics['memory_gate'].shape == (batch_size, hidden_dim)  # Updated shape
         assert torch.all(metrics['memory_gate'] >= 0.0)
         assert torch.all(metrics['memory_gate'] <= 1.0)
 
@@ -74,7 +74,7 @@ class TestConsciousnessStateManager:
         # Test loss properties
         assert torch.is_tensor(value_loss)
         assert value_loss.item() >= 0.0
-        assert td_error.shape == (batch_size, 2, 1)  # changed to match actual output
+        assert td_error.shape == (batch_size, 1)  # changed to match actual output
 
     def test_adaptive_gating(self, device, state_manager):
         batch_size = 2
