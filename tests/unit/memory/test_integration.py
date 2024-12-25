@@ -73,13 +73,13 @@ class TestInformationIntegration:
         # Test residual connection properties
         # Output should maintain some similarity with input
         input_output_correlation = torch.mean(torch.abs(
-            torch.corrcoef(inputs.view(-1, input_dim), output2.view(-1, input_dim))
+            torch.corrcoef(inputs.view(-1, input_dim).T, output2.view(-1, input_dim).T)
         ))
         assert input_output_correlation > 0.1
 
         # Test module interactions
         # Compute cross-module correlations
-        module_correlations = torch.corrcoef(output2.view(batch_size * num_modules, input_dim))
+        module_correlations = torch.corrcoef(output2.view(batch_size * num_modules, input_dim).T)
 
         # There should be some correlation between modules
         avg_cross_correlation = torch.mean(torch.abs(module_correlations))

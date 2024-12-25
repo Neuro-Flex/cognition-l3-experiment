@@ -61,32 +61,66 @@ class GlobalWorkspace(nn.Module):
 
         return output, memory_state
 
-class ConsciousnessModule(nn.Module):
+class ConsciousnessModel(nn.Module):
     """
     Main consciousness module implementing integration of various cognitive processes.
     """
-    def __init__(self, hidden_dim: int = 512, num_cognitive_processes: int = 4):
+    def __init__(self, hidden_dim: int, num_heads: int, num_layers: int, num_states: int, dropout_rate: float = 0.1, input_dim: int = None):
         super().__init__()
         self.hidden_dim = hidden_dim
-        self.num_cognitive_processes = num_cognitive_processes
+        self.num_heads = num_heads
+        self.num_layers = num_layers 
+        self.num_states = num_states
+        self.dropout_rate = dropout_rate
+        self.input_dim = input_dim if input_dim is not None else hidden_dim
 
-        # Global workspace for consciousness
-        self.global_workspace = GlobalWorkspace(hidden_dim=hidden_dim)
+        # Global Workspace for conscious awareness
+        self.global_workspace = GlobalWorkspace(
+            hidden_dim=hidden_dim,
+            num_heads=num_heads, 
+            dropout_rate=dropout_rate
+        )
 
-        # Cognitive processes (attention, memory, reasoning, emotion)
-        self.cognitive_processes = nn.ModuleList([
-            nn.Linear(hidden_dim, hidden_dim)
-            for _ in range(num_cognitive_processes)
-        ])
+        # Working memory
+        self.working_memory = WorkingMemory(
+            input_dim=self.input_dim,
+            hidden_dim=hidden_dim,
+            dropout_rate=dropout_rate
+        )
 
-        # Integration layer
-        self.integration = nn.Linear(hidden_dim, hidden_dim)
-        
-        # Add energy tracking
-        self.energy_tracker = nn.Linear(hidden_dim, 1)
-        
-        # Add phi calculation layer
-        self.phi_calculator = nn.Linear(hidden_dim, 1)
+        # Information integration
+        self.information_integration = InformationIntegration(
+            hidden_dim=hidden_dim,
+            num_modules=num_layers,
+            dropout_rate=dropout_rate
+        )
+
+        # Add attention for multi-head processing
+        self.attention = nn.MultiheadAttention(
+            embed_dim=hidden_dim,
+            num_heads=num_heads,
+            dropout=dropout_rate,
+            batch_first=True
+        )
+
+    def get_config(self):
+        return {
+            'hidden_dim': self.hidden_dim,
+            'num_heads': self.num_heads,
+            'num_layers': self.num_layers,
+            'num_states': self.num_states,
+            'dropout_rate': self.dropout_rate
+        }
+
+    @staticmethod
+    def create_default_config():
+        return {
+            'hidden_dim': 128,
+            'num_heads': 4,
+            'num_layers': 4,
+            'num_states': 4,
+            'dropout_rate': 0.1
+        }
 
     def calculate_phi(self, conscious_output):
         """Calculate information integration metric (phi)"""
@@ -97,48 +131,42 @@ class ConsciousnessModule(nn.Module):
         return torch.abs(self.energy_tracker(torch.mean(cognitive_outputs, dim=0))).mean()
 
     def forward(self, inputs: Dict[str, torch.Tensor],
-              memory_state: Optional[torch.Tensor] = None,
-              deterministic: bool = True) -> Dict[str, torch.Tensor]:
-        # Ensure the number of inputs matches the number of cognitive processes
-        if len(inputs) != self.num_cognitive_processes:
-            raise ValueError("Number of input modalities must match num_cognitive_processes.")
-
-        # Process different cognitive aspects
-        cognitive_outputs = []
-        for process, (key, value) in zip(self.cognitive_processes, inputs.items()):
-            processed = process(value)
-            cognitive_outputs.append(processed)
-
-        # Combine cognitive processes by stacking
-        combined = torch.stack(cognitive_outputs, dim=1)
-
+                state: Optional[torch.Tensor] = None,
+                deterministic: bool = True) -> Tuple[torch.Tensor, Dict]:
+        
+        # Get device from inputs
+        device = next(iter(inputs.values())).device
+        
+        # Initialize state if None
+        if state is None:
+            state = torch.zeros(inputs['attention'].shape[0], self.hidden_dim, device=device)
+            
+        # Process inputs
+        x = torch.stack(list(inputs.values()), dim=1)
+        
+        # Apply attention
+        attn_out, attention_weights = self.attention(x, x, x)
+        
         # Process through global workspace
-        conscious_output, new_memory_state = self.global_workspace(
-            combined, memory_state, deterministic
-        )
-
-        # Calculate metrics
-        phi = self.calculate_phi(conscious_output)
-        energy_cost = self.calculate_energy_cost(torch.stack(cognitive_outputs))
-        attention_maps = self.global_workspace.attention.attention_weights
-
-        # Final integration
-        integrated = self.integration(conscious_output)
-        integrated = torch.relu(integrated)
-
-        return {
-            'output': integrated,
-            'memory_state': new_memory_state,
-            'consciousness_state': conscious_output,
+        conscious_out, memory_state = self.global_workspace(attn_out, state, deterministic)
+        
+        # Calculate integration metrics
+        integrated_out, phi = self.information_integration(conscious_out, deterministic)
+        
+        return integrated_out, {
+            'attention_weights': attention_weights,
+            'memory_state': memory_state,
             'phi': phi,
-            'energy_cost': energy_cost,
-            'attention_maps': attention_maps
+            'attention_maps': attention_weights
         }
 
 def create_consciousness_module(hidden_dim: int = 512,
-                             num_cognitive_processes: int = 4) -> ConsciousnessModule:
+                             num_cognitive_processes: int = 4) -> ConsciousnessModel:
     """Creates and initializes the consciousness module."""
-    return ConsciousnessModule(
+    return ConsciousnessModel(
         hidden_dim=hidden_dim,
-        num_cognitive_processes=num_cognitive_processes
+        num_heads=8,
+        num_layers=4,
+        num_states=num_cognitive_processes,
+        dropout_rate=0.1
     )

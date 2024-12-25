@@ -100,18 +100,23 @@ class GlobalWorkspace(nn.Module):
             nn.Dropout(dropout_rate)
         )
 
-    def forward(self, inputs: torch.Tensor, mask: Optional[torch.Tensor] = None, 
-                training: bool = True) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, inputs: torch.Tensor, 
+                memory_state: Optional[torch.Tensor] = None,
+                deterministic: bool = True) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Forward pass with optional deterministic mode."""
         # Layer normalization and attention
         x = self.layer_norm1(inputs)
-        attended_output, attention_weights = self.attention(x, x, mask, training)
+        attended_output, attention_weights = self.attention(
+            x, x, mask=None, 
+            training=not deterministic  # Convert deterministic to training mode
+        )
         
         # First residual connection
         x = inputs + attended_output
         
         # Feed-forward network with residual connection
         y = self.layer_norm2(x)
-        y = self.ff_network(y)
+        y = self.ff_network(y) if not deterministic else self.ff_network.eval()(y)
         output = x + y
 
         return output, attention_weights

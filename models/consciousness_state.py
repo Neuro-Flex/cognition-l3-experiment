@@ -7,11 +7,23 @@ class CognitiveProcessIntegration(nn.Module):
     """
     Extended transformer architecture for multi-modal task management.
     """
-    def __init__(self, hidden_dim: int, num_heads: int):
+    def __init__(self, hidden_dim: int, num_heads: int, dropout_rate: float = 0.1):
         super().__init__()
         self.hidden_dim = hidden_dim
         self.num_heads = num_heads
-        self.dropout_rate = 0.1
+        self.dropout_rate = dropout_rate
+        
+        # Add multihead attention
+        self.attention = nn.MultiheadAttention(
+            embed_dim=hidden_dim,
+            num_heads=num_heads,
+            dropout=dropout_rate,
+            batch_first=True
+        )
+        
+        # Add layer norm and dropout
+        self.layer_norm = nn.LayerNorm(hidden_dim)
+        self.dropout = nn.Dropout(dropout_rate)
 
     def forward(self, inputs: Dict[str, torch.Tensor], deterministic: bool = True):
         processed_modalities = {}

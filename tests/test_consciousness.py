@@ -20,14 +20,20 @@ class TestConsciousnessModel(ConsciousnessTestBase):
             input_dim=hidden_dim  # Added input_dim argument
         )
 
+    def create_inputs(self, seed_fixture, batch_size, seq_length, hidden_dim):
+        """Create sample input tensors with proper seed handling."""
+        seed = seed_fixture() if hasattr(seed_fixture, '__call__') else seed_fixture
+        return super().create_inputs(seed, batch_size, seq_length, hidden_dim)
+        
     @pytest.fixture
-    def sample_input(self, batch_size, seq_length, hidden_dim):
+    def sample_input(self, seed, batch_size, seq_length, hidden_dim):
         """Create sample input data for testing."""
+        seed_val = seed  # Don't call fixture directly
         inputs = {
-            'attention': self.create_inputs(self.seed, batch_size, seq_length, hidden_dim),
-            'memory': self.create_inputs(self.seed, batch_size, seq_length, hidden_dim),
-            'reasoning': self.create_inputs(self.seed, batch_size, seq_length, hidden_dim),
-            'emotion': self.create_inputs(self.seed, batch_size, seq_length, hidden_dim)
+            'attention': self.create_inputs(seed_val, batch_size, seq_length, hidden_dim),
+            'memory': self.create_inputs(seed_val, batch_size, seq_length, hidden_dim),
+            'reasoning': self.create_inputs(seed_val, batch_size, seq_length, hidden_dim),
+            'emotion': self.create_inputs(seed_val, batch_size, seq_length, hidden_dim)
         }
         return inputs
 
@@ -55,14 +61,11 @@ class TestConsciousnessModel(ConsciousnessTestBase):
             new_state, metrics = model(sample_input, deterministic=deterministic)
 
         # Check output structure and shapes
-        batch_size = sample_input['attention'].shape[0]
+        batch_size = next(iter(sample_input.values())).shape[0]
         assert new_state.shape == (batch_size, model.hidden_dim)
 
         # Verify metrics
-        assert 'memory_state' in metrics
-        assert 'attention_weights' in metrics
-        assert 'phi' in metrics
-        assert 'attention_maps' in metrics
+        assert all(k in metrics for k in ['memory_state', 'attention_weights', 'phi', 'attention_maps'])
 
         # Validate attention weights
         self.assert_valid_attention(metrics['attention_weights'])

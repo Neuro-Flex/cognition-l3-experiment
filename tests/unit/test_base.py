@@ -25,7 +25,7 @@ class ConsciousnessTestBase:
     @pytest.fixture
     def hidden_dim(self):
         """Default hidden dimension."""
-        return 64
+        return 128
 
     @pytest.fixture
     def num_heads(self):
@@ -39,7 +39,7 @@ class ConsciousnessTestBase:
 
     def create_inputs(self, seed, batch_size, seq_length, hidden_dim):
         """Create random input tensors."""
-        torch.manual_seed(seed)
+        torch.manual_seed(seed)  # Use seed value directly
         return torch.randn(batch_size, seq_length, hidden_dim)
 
     def assert_output_shape(self, output, expected_shape):

@@ -13,6 +13,7 @@ class TestMemoryComponents(ConsciousnessTestBase):
 
     @pytest.fixture
     def device(self):
+        """Get default device."""
         return torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     @pytest.fixture
@@ -28,27 +29,27 @@ class TestMemoryComponents(ConsciousnessTestBase):
         return 64
 
     @pytest.fixture
-    def working_memory(self, hidden_dim):
+    def working_memory(self, hidden_dim, device):
         """Create working memory module for testing."""
         return WorkingMemory(
             input_dim=hidden_dim,
             hidden_dim=hidden_dim,
             dropout_rate=0.1
-        ).to(self.device)
+        ).to(device)
 
     @pytest.fixture
-    def info_integration(self, hidden_dim):
+    def info_integration(self, hidden_dim, device):
         """Create information integration module for testing."""
         return InformationIntegration(
             hidden_dim=hidden_dim,
             num_modules=4,
             dropout_rate=0.1
-        ).to(self.device)
+        ).to(device)
 
     @pytest.fixture
-    def gru_cell(self, hidden_dim):
+    def gru_cell(self, hidden_dim, device):
         """Create GRU cell for testing."""
-        return GRUCell(input_dim=hidden_dim, hidden_dim=hidden_dim).to(self.device)
+        return GRUCell(input_dim=hidden_dim, hidden_dim=hidden_dim).to(device)
 
     def test_gru_state_updates(self, gru_cell, device, batch_size, hidden_dim):
         """Test GRU cell state updates."""
