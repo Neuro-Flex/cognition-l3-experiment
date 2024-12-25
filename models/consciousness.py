@@ -50,6 +50,9 @@ class GlobalWorkspace(nn.Module):
         update = self.memory_update(attended)
         memory_state = gate * memory_state + (1 - gate) * update
 
+        # Ensure memory gate output dimensions are correct
+        memory_state = memory_state.view(memory_state.size(0), -1)
+
         # Integrate information
         integrated = torch.relu(self.integration_layer(
             torch.cat([attended, memory_state], dim=-1)
