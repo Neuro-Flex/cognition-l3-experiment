@@ -95,8 +95,7 @@ class ConsciousnessModel(nn.Module):
         # Global workspace processing
         workspace_input = next(iter(inputs.values()))
         workspace_output, attention_weights = self.global_workspace(
-            workspace_input,
-            deterministic=deterministic
+            workspace_input
         )
         metrics['attention_weights'] = attention_weights
 

@@ -24,6 +24,8 @@ class EnvironmentTests(unittest.TestCase):
             self.assertTrue(True, "All core imports successful")
         except ImportError as e:
             self.fail(f"Failed to import core frameworks: {str(e)}")
+        except RuntimeError as e:
+            self.fail(f"Runtime error during import: {str(e)}")
 
     def test_hardware_detection(self):
         """Test hardware detection and configuration"""
