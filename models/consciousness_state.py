@@ -77,8 +77,9 @@ class ConsciousnessStateManager(nn.Module):
     def __init__(self, hidden_dim: int, input_dim: Optional[int] = None, 
                  num_states: int = 4, dropout_rate: float = 0.1):
         super().__init__()
+        input_dim = input_dim or hidden_dim  # Ensure input_dim is set
         self.hidden_dim = hidden_dim
-        self.input_dim = input_dim or hidden_dim
+        self.input_dim = input_dim
         self.num_states = num_states
         self.dropout_rate = dropout_rate
 
@@ -93,8 +94,8 @@ class ConsciousnessStateManager(nn.Module):
         
         # Optional input projection
         self.input_projection = None
-        if input_dim != hidden_dim:
-            self.input_projection = nn.Linear(input_dim, hidden_dim)
+        if self.input_dim != hidden_dim:
+            self.input_projection = nn.Linear(self.input_dim, hidden_dim)
 
         # For RL "value"
         self.value_network = nn.Linear(hidden_dim, 1)
