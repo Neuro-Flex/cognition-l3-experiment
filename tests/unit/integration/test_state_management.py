@@ -41,7 +41,7 @@ class TestConsciousnessStateManager:
         assert 'state_value' in metrics
 
         # Test memory gate properties
-        assert metrics['memory_gate'].shape == (batch_size, hidden_dim)
+        assert metrics['memory_gate'].shape == (batch_size, 1)
         assert torch.all(metrics['memory_gate'] >= 0.0)
         assert torch.all(metrics['memory_gate'] <= 1.0)
 

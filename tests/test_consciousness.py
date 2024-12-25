@@ -42,6 +42,7 @@ class TestConsciousnessModel(ConsciousnessTestBase):
         assert model.num_heads == 4
         assert model.num_layers == 4
         assert model.num_states == 4
+        assert model.input_dim == 128  # Check for input_dim
 
     def test_model_forward_pass(self, model, sample_input, deterministic):
         """Test forward pass through consciousness model."""

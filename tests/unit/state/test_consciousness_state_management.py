@@ -41,7 +41,7 @@ class TestConsciousnessStateManager:
         assert 'state_value' in metrics
 
         # Test memory gate properties
-        assert metrics['memory_gate'].shape == (batch_size, 1)
+        assert metrics['memory_gate'].shape == (batch_size, hidden_dim)  # Updated shape
         assert torch.all(metrics['memory_gate'] >= 0.0)
         assert torch.all(metrics['memory_gate'] <= 1.0)
 
@@ -127,3 +127,6 @@ class TestConsciousnessStateManager:
 
         # Energy cost should be higher for more different inputs
         assert metrics2['energy_cost'].item() > metrics1['energy_cost'].item()
+        # Test memory gate properties
+        assert metrics1['memory_gate'].shape == (batch_size, hidden_dim)  # Updated shape
+        assert metrics2['memory_gate'].shape == (batch_size, hidden_dim)  # Updated shape
