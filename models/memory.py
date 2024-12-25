@@ -8,9 +8,10 @@ class GRUCell(nn.Module):
     """
     def __init__(self, input_dim: int, hidden_dim: int):
         super().__init__()
+        self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         
-        # Combined gates
+        # Combined gates - update input dimensions
         self.update = nn.Linear(input_dim + hidden_dim, hidden_dim)
         self.reset = nn.Linear(input_dim + hidden_dim, hidden_dim)
         self.candidate = nn.Linear(input_dim + hidden_dim, hidden_dim)
@@ -23,9 +24,14 @@ class GRUCell(nn.Module):
             x: Input tensor [batch_size, input_dim]
             h: Hidden state [batch_size, hidden_dim]
         """
-        # Ensure inputs are float tensors
+        # Ensure inputs are float tensors and properly shaped
         x = torch.as_tensor(x, dtype=torch.float32)
         h = torch.as_tensor(h, dtype=torch.float32)
+        
+        # Ensure proper dimensions
+        if x.dim() == 2:
+            if x.size(1) != self.input_dim:
+                raise ValueError(f"Expected input dim {self.input_dim}, got {x.size(1)}")
 
         # Concatenate inputs for efficiency
         inputs = torch.cat([x, h], dim=-1)
@@ -67,16 +73,17 @@ class GRUCell(nn.Module):
             nn.init.uniform_(self.candidate.bias, -bound, bound)
 
 class WorkingMemory(nn.Module):
-    def __init__(self, input_dim, hidden_dim):
+    def __init__(self, input_dim, hidden_dim, dropout_rate=0.1):
         super().__init__()
         self.hidden_dim = hidden_dim
         self.input_projection = nn.Linear(input_dim, hidden_dim)
         self.gru = nn.GRU(hidden_dim, hidden_dim)
         self.layer_norm = nn.LayerNorm(hidden_dim)
+        self.dropout = nn.Dropout(dropout_rate)
         
     def forward(self, x, prev_state=None):
         # Project input to hidden dimension
-        x = self.input_projection(x)
+        x = self.dropout(self.input_projection(x))
         x = self.layer_norm(x)
         
         if prev_state is None:
@@ -96,11 +103,11 @@ class InformationIntegration(nn.Module):
         self.dropout_rate = dropout_rate
         self.input_dim = input_dim if input_dim is not None else hidden_dim
         
-        # Update input projection to handle correct dimensions
-        self.input_projection = nn.Linear(self.input_dim, hidden_dim) if self.input_dim != hidden_dim else nn.Identity()
-        self.layer_norm = nn.LayerNorm(hidden_dim)
+        # Update input projection
+        self.input_projection = nn.Linear(self.input_dim, self.input_dim)  # Changed to maintain input dim
+        self.layer_norm = nn.LayerNorm(self.input_dim)
         self.multihead_attn = nn.MultiheadAttention(
-            embed_dim=hidden_dim,
+            embed_dim=self.input_dim,  # Changed to use input_dim
             num_heads=4,
             dropout=dropout_rate,
             batch_first=True
@@ -122,7 +129,10 @@ class InformationIntegration(nn.Module):
             
         # Add residual connection
         output = x + y
-        
+
+        # Prevent potential NaNs by clamping
+        output = torch.clamp(output, min=-1e6, max=1e6)
+
         # Calculate integration metric (phi)
         phi = torch.mean(torch.abs(output), dim=(-2, -1))
         
