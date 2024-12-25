@@ -31,17 +31,36 @@ class CognitiveProcessIntegration(nn.Module):
         # Add modality combination layer
         self.modality_combination = nn.Linear(hidden_dim, hidden_dim)
 
-    def forward(self, inputs: Dict[str, torch.Tensor], deterministic: bool = True):
-        """Process multiple modalities and generate cross-modal attention maps."""
-        batch_size = next(iter(inputs.values())).size(0)
-        seq_length = next(iter(inputs.values())).size(1)
+    def forward(self, inputs: Dict[str, torch.Tensor], deterministic: bool = True) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        # Input validation
+        if not inputs:
+            raise ValueError("Empty input dictionary")
+
+        # Get expected input dimension
+        first_tensor = next(iter(inputs.values()))
+        expected_shape = first_tensor.shape[-1]
+
+        # Define batch_size and seq_length
+        batch_size, seq_length, _ = first_tensor.size()
+
+        # Initialize attention_maps dictionary
         attention_maps = {}
+
+        # Validate all inputs
+        for name, tensor in inputs.items():
+            if tensor.size(-1) != expected_shape:
+                raise ValueError(f"Mismatched input dimension for {name}: expected {expected_shape}, got {tensor.size(-1)}")
+            if tensor.dim() not in [2, 3]:
+                raise ValueError(f"Input {name} must be 2D or 3D tensor, got shape {tensor.shape}")
+            if torch.isnan(tensor).any():
+                raise ValueError(f"Input {name} contains NaN values")
+
+        # Process inputs
         processed_states = {}
-        
-        # First pass: Project all inputs
         for modality, tensor in inputs.items():
-            processed = self.input_projection(tensor)
-            processed_states[modality] = processed
+            if tensor.dim() == 2:
+                tensor = tensor.unsqueeze(1)  # Add sequence dimension
+            processed_states[modality] = self.input_projection(tensor)
 
         # Initialize combined state with zeros
         combined_state = torch.zeros(

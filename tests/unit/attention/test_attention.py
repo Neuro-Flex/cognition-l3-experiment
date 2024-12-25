@@ -46,8 +46,7 @@ class TestAttentionMechanisms(ConsciousnessTestBase):
         with torch.no_grad():
             output, attention_weights = attention_module(
                 inputs_q, 
-                inputs_kv,
-                training=False  # Use training=False instead of deterministic=True
+                inputs_kv
             )
 
         # Verify output shape
@@ -70,8 +69,7 @@ class TestAttentionMechanisms(ConsciousnessTestBase):
             output, attention_weights = attention_module(
                 inputs_q, 
                 inputs_kv,
-                mask=mask,
-                training=False
+                mask=mask
             )
 
         # Verify masked attention weights are zero
@@ -85,8 +83,8 @@ class TestAttentionMechanisms(ConsciousnessTestBase):
         # Test with and without dropout
         attention_module.eval()
         with torch.no_grad():
-            output1, _ = attention_module(inputs_q, inputs_kv, training=False)
-            output2, _ = attention_module(inputs_q, inputs_kv, training=False)
+            output1, _ = attention_module(inputs_q, inputs_kv)
+            output2, _ = attention_module(inputs_q, inputs_kv)
 
         # Outputs should be identical when deterministic
         assert torch.allclose(output1, output2, rtol=1e-5)
@@ -113,3 +111,41 @@ class TestAttentionMechanisms(ConsciousnessTestBase):
         # Test residual connection
         # Output should be different from input due to processing
         assert not torch.allclose(output, inputs, rtol=1e-5)
+
+    def test_attention_dropout(self, attention_module, batch_size, seq_length, hidden_dim):
+        """Test attention dropout behavior."""
+        inputs_q = torch.randn(batch_size, seq_length, hidden_dim)
+        inputs_kv = torch.randn(batch_size, seq_length, hidden_dim)
+
+        attention_module.train()  # Set to training mode
+
+        # Test with dropout enabled (training mode)
+        output1, _ = attention_module(inputs_q, inputs_kv)
+
+        output2, _ = attention_module(inputs_q, inputs_kv)
+
+        # Outputs should be different due to dropout
+        assert not torch.allclose(output1, output2)
+
+        attention_module.eval()  # Set to evaluation mode
+
+        # Test with dropout disabled (inference mode)
+        with torch.no_grad():
+            output3, _ = attention_module(inputs_q, inputs_kv)
+
+            output4, _ = attention_module(inputs_q, inputs_kv)
+
+        # Outputs should be identical with dropout disabled
+        assert torch.allclose(output3, output4)
+
+    def test_attention_output_shape(self, attention_module, batch_size, seq_length, hidden_dim):
+        """Test attention output shape."""
+        inputs_q = torch.randn(batch_size, seq_length, hidden_dim)
+        inputs_kv = torch.randn(batch_size, seq_length, hidden_dim)
+
+        attention_module.eval()  # Set to evaluation mode
+
+        with torch.no_grad():
+            output, _ = attention_module(inputs_q, inputs_kv)
+
+        assert output.shape == inputs_q.shape  # Adjusted expected shape

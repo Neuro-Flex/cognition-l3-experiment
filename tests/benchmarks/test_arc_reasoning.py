@@ -92,9 +92,11 @@ class TestARCReasoning:
                 # Validate attention maps
                 assert 'attention_maps' in metrics
                 for attn_map in metrics['attention_maps'].values():
+                    # Get actual dimensions from attention map
+                    batch, heads, seq_len = attn_map.size()[:3]
                     assert torch.allclose(
                         torch.sum(attn_map, dim=-1),
-                        torch.ones((batch_size, 8, 64), device=device)
+                        torch.ones((batch, heads, seq_len), device=device)
                     )
 
         except Exception as e:

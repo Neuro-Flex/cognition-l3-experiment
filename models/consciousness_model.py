@@ -82,10 +82,38 @@ class ConsciousnessModel(nn.Module):
         """
         Process inputs through consciousness architecture.
         """
-        # Initialize attention maps dictionary
+        # Initialize attention maps dictionary 
         attention_maps = {}
 
         # Validate and process inputs
+        if not inputs:
+            raise ValueError("Inputs cannot be empty.")
+
+        # Allow for more flexible input combinations
+        required_modalities = {'visual', 'textual'}  # Required modalities
+        missing_modalities = required_modalities - inputs.keys()
+        if missing_modalities:
+            # Auto-populate missing modalities with zero tensors
+            batch_size = next(iter(inputs.values())).size(0)
+            seq_len = next(iter(inputs.values())).size(1)
+            for modality in missing_modalities:
+                inputs[modality] = torch.zeros(batch_size, seq_len, self.hidden_dim, device=inputs[next(iter(inputs.keys()))].device)
+
+        # Check input dimensions
+        expected_dims = {
+            'attention': (None, 8, self.hidden_dim),
+            'memory': (None, 10, self.hidden_dim),
+            'visual': (None, None, self.hidden_dim),
+            'textual': (None, None, self.hidden_dim)
+        }
+
+        # Project inputs to correct dimension if needed
+        for modality, tensor in inputs.items():
+            if modality in expected_dims:
+                # Project if dimensions don't match
+                if tensor.size(-1) != self.hidden_dim:
+                    inputs[modality] = self.input_projection(tensor)
+
         batch_size = next(iter(inputs.values())).shape[0]
         inputs = {k: torch.tensor(v, dtype=torch.float32) for k, v in inputs.items()}
 
@@ -250,51 +278,78 @@ class CognitiveProcessIntegration(nn.Module):
 
     def forward(self, inputs: Dict[str, torch.Tensor], deterministic: bool = True):
         """Process multiple modalities and generate cross-modal attention maps."""
-        batch_size = next(iter(inputs.values())).size(0)
+        if not inputs:
+            raise ValueError("Empty input dictionary")
+            
+        # Get dimensions from first input tensor
+        first_tensor = next(iter(inputs.values()))
+        batch_size = first_tensor.size(0)
+        hidden_dim = first_tensor.size(-1)
+        
+        # Validate all inputs have same sequence length
         seq_length = next(iter(inputs.values())).size(1)
+        for name, tensor in inputs.items():
+            if tensor.size(1) != seq_length:
+                raise ValueError(f"Sequence length mismatch for {name}: expected {seq_length}, got {tensor.size(1)}")
+        
+        # Initialize combined state with correct dimensions
+        combined_state = torch.zeros(
+            batch_size, seq_length, hidden_dim,
+            device=first_tensor.device
+        )
+
         attention_maps = {}
         processed_states = {}
 
-        # First pass: Project all inputs
+        # Input validation
+        if not inputs:
+            raise ValueError("Empty input dictionary")
+
+        # Ensure all inputs have same dimensions
+        first_tensor = next(iter(inputs.values()))
+        expected_shape = first_tensor.shape[-1]
+        for name, tensor in inputs.items():
+            if tensor.shape[-1] != expected_shape:
+                raise ValueError(f"Mismatched dimensions for {name}: expected {expected_shape}, got {tensor.shape[-1]}")
+
+        # Project and reshape inputs
         for modality, tensor in inputs.items():
-            processed = self.input_projection(tensor)  # Use input_projection
+            # Ensure 3D shape for attention
+            if tensor.dim() == 2:
+                tensor = tensor.unsqueeze(1)
+            processed = self.input_projection(tensor)
             processed_states[modality] = processed
 
-        # Initialize combined state with zeros matching the maximum sequence length
-        max_seq_length = max(tensor.size(1) for tensor in processed_states.values())
+        # Generate attention maps between all pairs
         combined_state = torch.zeros(
-            batch_size, max_seq_length, self.hidden_dim,
+            batch_size, seq_length, self.hidden_dim,
             device=next(iter(inputs.values())).device
         )
 
-        # Generate attention maps between all modality pairs
-        for source in inputs.keys():
-            for target in inputs.keys():
+        for source in processed_states.keys():
+            for target in processed_states.keys():
                 if source != target:
-                    query = processed_states[target]
+                    query = processed_states[target] 
                     key = processed_states[source]
                     value = processed_states[source]
+
+                    # Ensure 3D shape for attention
+                    if query.dim() == 2:
+                        query = query.unsqueeze(1)
+                    if key.dim() == 2:
+                        key = key.unsqueeze(1)
+                    if value.dim() == 2:
+                        value = value.unsqueeze(1)
 
                     attn_output, attn_weights = self.attention(
                         query=query,
                         key=key,
                         value=value
                     )
-
-                    # Store attention map
-                    map_key = f"{target}-{source}"
-                    attention_maps[map_key] = attn_weights
-
-                    # Pad attn_output if necessary to match combined_state's sequence length
-                    if attn_output.size(1) < max_seq_length:
-                        pad_size = max_seq_length - attn_output.size(1)
-                        attn_output = torch.nn.functional.pad(attn_output, (0, 0, 0, pad_size))
-                    elif attn_output.size(1) > max_seq_length:
-                        attn_output = attn_output[:, :max_seq_length, :]
-
+                    
+                    attention_maps[f"{target}-{source}"] = attn_weights
                     combined_state = combined_state + attn_output
 
-        # ...existing code...
         return combined_state, attention_maps
 
 class InformationIntegration(nn.Module):

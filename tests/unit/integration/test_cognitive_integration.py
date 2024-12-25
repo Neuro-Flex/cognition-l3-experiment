@@ -149,3 +149,48 @@ class TestCognitiveProcessIntegration:
                         attention_map.sum(dim=-1),
                         torch.ones((batch_size, seq_length), device=device)
                     )
+
+    def test_edge_cases(self, device, integration_module):
+        batch_size = 2
+        seq_length = 8
+        input_dim = 64  # Updated input_dim to match the expected input shape
+
+        # Test with empty input
+        empty_input = {}
+        with pytest.raises(ValueError):
+            integration_module(empty_input, deterministic=True)
+
+        # Test with mismatched input dimensions
+        mismatched_input = {
+            'visual': torch.randn(batch_size, seq_length, input_dim, device=device),
+            'textual': torch.randn(batch_size, seq_length, input_dim // 2, device=device)  # Different input dimension
+        }
+        with pytest.raises(ValueError):
+            integration_module(mismatched_input, deterministic=True)
+
+    def test_dropout_behavior(self, device, integration_module):
+        batch_size = 2
+        seq_length = 8
+        input_dim = 64  # Updated input_dim to match the expected input shape
+
+        inputs = {
+            'visual': torch.randn(batch_size, seq_length, input_dim, device=device),
+            'textual': torch.randn(batch_size, seq_length, input_dim, device=device)
+        }
+
+        # Test with dropout enabled
+        integration_module.train()
+        state1, _ = integration_module(inputs, deterministic=False)
+        state2, _ = integration_module(inputs, deterministic=False)
+
+        # Outputs should be different due to dropout
+        assert not torch.allclose(state1, state2)
+
+        # Test with dropout disabled
+        integration_module.eval()
+        with torch.no_grad():
+            state3, _ = integration_module(inputs, deterministic=True)
+            state4, _ = integration_module(inputs, deterministic=True)
+
+        # Outputs should be identical with dropout disabled
+        assert torch.allclose(state3, state4)

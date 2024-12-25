@@ -108,11 +108,10 @@ class InformationIntegration(nn.Module):
         self.dropout_rate = dropout_rate
         self.input_dim = input_dim if input_dim is not None else hidden_dim
         
-        # Update input projection
-        self.input_projection = nn.Linear(self.input_dim, self.input_dim)  # Changed to maintain input dim
+        self.input_projection = nn.Linear(self.input_dim, self.input_dim)
         self.layer_norm = nn.LayerNorm(self.input_dim)
         self.multihead_attn = nn.MultiheadAttention(
-            embed_dim=self.input_dim,  # Changed to use input_dim
+            embed_dim=self.input_dim,
             num_heads=4,
             dropout=dropout_rate,
             batch_first=True
@@ -120,21 +119,29 @@ class InformationIntegration(nn.Module):
         self.dropout = nn.Dropout(dropout_rate)
 
     def forward(self, inputs, deterministic=True):
-        # Project inputs if needed
+        # Check for empty input
+        if inputs.size(0) == 0 or inputs.size(1) == 0 or inputs.size(2) == 0:
+            raise ValueError("Input tensor is empty")
+
+        # Check for NaN values
+        if torch.isnan(inputs).any():
+            raise ValueError("Input contains NaN values")
+
+        # Check for mismatched input dimensions
+        if inputs.size(-1) != self.input_dim:
+            raise ValueError(f"Expected input dim {self.input_dim}, got {inputs.size(-1)}")
+
+        # Process inputs through input projection and layer norm
         x = self.input_projection(inputs)
-            
-        # Apply layer normalization
         x = self.layer_norm(x)
         
-        # Apply self-attention
-        y, _ = self.multihead_attn(x, x, x)
+        # Apply multihead attention
+        output, _ = self.multihead_attn(x, x, x)
         
-        if not deterministic:
-            y = self.dropout(y)
+        # Apply dropout if in training mode
+        if not deterministic and self.training:
+            output = self.dropout(output)
             
-        # Add residual connection
-        output = x + y
-
         # Prevent potential NaNs by clamping
         output = torch.clamp(output, min=-1e6, max=1e6)
 

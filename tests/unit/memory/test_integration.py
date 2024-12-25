@@ -150,3 +150,52 @@ class TestInformationIntegration:
 
         # Structured input should have higher integration
         assert torch.all(phi_structured >= phi_random - 0.1)  # Allow slight variability
+
+    def test_edge_cases(self, device, integration_module):
+        batch_size = 2
+        num_modules = 4
+        input_dim = 32  # Updated to match expected shapes
+
+        # Test with zero-sized dimensions
+        empty_batch = torch.randn(0, num_modules, input_dim, device=device)
+        with pytest.raises(ValueError):
+            integration_module(empty_batch)
+
+        empty_modules = torch.randn(batch_size, 0, input_dim, device=device)
+        with pytest.raises(ValueError):
+            integration_module(empty_modules)
+
+        # Test with mismatched input dimensions
+        wrong_dim = input_dim + 1
+        mismatched_input = torch.randn(batch_size, num_modules, wrong_dim, device=device)
+        with pytest.raises(ValueError):
+            integration_module(mismatched_input)
+
+        # Test with NaN values
+        nan_input = torch.full((batch_size, num_modules, input_dim), float('nan'), device=device)
+        with pytest.raises(ValueError):
+            integration_module(nan_input)
+
+    def test_dropout_behavior(self, device, integration_module):
+        batch_size = 2
+        num_modules = 4
+        input_dim = 32  # Updated to match expected shapes
+
+        inputs = torch.randn(batch_size, num_modules, input_dim, device=device)
+
+        # Test with dropout enabled
+        integration_module.train()
+        output1, _ = integration_module(inputs, deterministic=False)
+        output2, _ = integration_module(inputs, deterministic=False)
+
+        # Outputs should be different due to dropout
+        assert not torch.allclose(output1, output2)
+
+        # Test with dropout disabled
+        integration_module.eval()
+        with torch.no_grad():
+            output3, _ = integration_module(inputs, deterministic=True)
+            output4, _ = integration_module(inputs, deterministic=True)
+
+        # Outputs should be identical with dropout disabled
+        assert torch.allclose(output3, output4)
