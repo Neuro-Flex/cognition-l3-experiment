@@ -65,11 +65,11 @@ class TestMemoryComponents(ConsciousnessTestBase):
         # State should be updated (different from initial state)
         assert not torch.allclose(new_h, h, rtol=1e-5)
 
-    def test_memory_sequence_processing(self, working_memory, device, batch_size, seq_length, hidden_dim):
+    def test_memory_sequence_processing(self, working_memory, device, batch_size, seq_length, hidden_dim, seed):
         """Test working memory sequence processing."""
         # Test with different sequence lengths
         for test_length in [4, 8, 16]:
-            inputs = self.create_inputs(self.seed, batch_size, test_length, hidden_dim).to(device)
+            inputs = self.create_inputs(seed, batch_size, test_length, hidden_dim).to(device)
             initial_state = torch.zeros(batch_size, hidden_dim, device=device)
 
             output, final_state = working_memory(inputs, initial_state, deterministic=True)
@@ -77,10 +77,10 @@ class TestMemoryComponents(ConsciousnessTestBase):
             # Verify shapes adapt to sequence length
             self.assert_output_shape(output, (batch_size, test_length, hidden_dim))
 
-    def test_context_aware_gating(self, working_memory, device, batch_size, seq_length, hidden_dim):
+    def test_context_aware_gating(self, working_memory, device, batch_size, seq_length, hidden_dim, seed):
         """Test context-aware gating mechanisms."""
         # Create two different input sequences with controlled differences
-        base_inputs = self.create_inputs(self.seed, batch_size, seq_length, hidden_dim).to(device)
+        base_inputs = self.create_inputs(seed, batch_size, seq_length, hidden_dim).to(device)
 
         # Create similar and different inputs
         similar_inputs = base_inputs + torch.randn_like(base_inputs) * 0.1
@@ -102,7 +102,7 @@ class TestMemoryComponents(ConsciousnessTestBase):
         """Test information integration computation."""
         # Create inputs with proper shape for information integration
         inputs = torch.stack([
-            self.create_inputs(self.seed, batch_size, seq_length, hidden_dim).to(device)
+            self.create_inputs(self.seed(), batch_size, seq_length, hidden_dim).to(device)
             for _ in range(info_integration.num_modules)
         ], dim=1)  # Shape: [batch, num_modules, seq_length, hidden_dim]
 
@@ -118,13 +118,13 @@ class TestMemoryComponents(ConsciousnessTestBase):
         # Phi should be non-negative and finite
         assert torch.all(phi >= 0) and torch.all(torch.isfinite(phi))
 
-    def test_memory_retention(self, working_memory, device, batch_size, seq_length, hidden_dim):
+    def test_memory_retention(self, working_memory, device, batch_size, seq_length, hidden_dim, seed):
         """Test memory retention over sequences."""
         # Create a sequence with a distinctive pattern
         pattern = torch.ones(batch_size, 1, hidden_dim, device=device)
         inputs = torch.cat([
             pattern,
-            self.create_inputs(self.seed, batch_size, seq_length-2, hidden_dim).to(device),
+            self.create_inputs(seed, batch_size, seq_length-2, hidden_dim).to(device),
             pattern
         ], dim=1)
 

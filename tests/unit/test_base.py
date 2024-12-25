@@ -3,14 +3,15 @@ Base test configuration and utilities for consciousness model tests.
 """
 import torch
 import pytest
+import random
 
 class ConsciousnessTestBase:
     """Base class for consciousness model tests."""
 
     @pytest.fixture
     def seed(self):
-        """Provide reproducible random seed."""
-        return 42
+        """Fixture to provide a random seed."""
+        return random.randint(0, 2**32 - 1)
 
     @pytest.fixture
     def batch_size(self):
@@ -37,9 +38,20 @@ class ConsciousnessTestBase:
         """Default deterministic mode for testing."""
         return True
 
-    def create_inputs(self, seed, batch_size, seq_length, hidden_dim):
-        """Create random input tensors."""
-        torch.manual_seed(seed)  # Use seed value directly
+    def create_inputs(self, seed: int, batch_size: int, seq_length: int, hidden_dim: int) -> torch.Tensor:
+        """
+        Create input tensors with a specific seed for reproducibility.
+
+        Args:
+            seed (int): Seed value for random number generator.
+            batch_size (int): Number of samples in a batch.
+            seq_length (int): Sequence length.
+            hidden_dim (int): Dimension of hidden layers.
+
+        Returns:
+            torch.Tensor: Generated input tensor.
+        """
+        torch.manual_seed(seed)
         return torch.randn(batch_size, seq_length, hidden_dim)
 
     def assert_output_shape(self, output, expected_shape):
