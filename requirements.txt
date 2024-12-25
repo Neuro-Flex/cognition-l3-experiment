@@ -1,0 +1,17 @@
+# Core dependencies
+torch==2.5.1+cpu
+torchvision==0.20.1
+torchaudio==2.5.1
+
+# Testing
+pytest==8.3.4
+pytest-cov==6.0.0
+
+# Utilities
+numpy==1.26.4
+packaging==20.9
+typing_extensions==4.12.2
+
+# Optional dependencies
+matplotlib==3.5.3
+pandas==2.2.3
