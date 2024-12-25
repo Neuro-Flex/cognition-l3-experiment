@@ -75,22 +75,27 @@ class GRUCell(nn.Module):
 class WorkingMemory(nn.Module):
     def __init__(self, input_dim, hidden_dim, dropout_rate=0.1):
         super().__init__()
+        self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.input_projection = nn.Linear(input_dim, hidden_dim)
         self.gru = nn.GRU(hidden_dim, hidden_dim)
         self.layer_norm = nn.LayerNorm(hidden_dim)
         self.dropout = nn.Dropout(dropout_rate)
         
-    def forward(self, x, prev_state=None):
+    def forward(self, x, prev_state=None, deterministic=True):
         # Project input to hidden dimension
-        x = self.dropout(self.input_projection(x))
+        x = self.input_projection(x)
+        if not deterministic:
+            x = self.dropout(x)
         x = self.layer_norm(x)
         
         if prev_state is None:
             prev_state = torch.zeros((1, x.size(0), self.hidden_dim), device=x.device)
+        elif prev_state.dim() == 2:
+            prev_state = prev_state.unsqueeze(0)
             
-        output, new_state = self.gru(x.unsqueeze(0), prev_state)
-        return output.squeeze(0), new_state
+        output, new_state = self.gru(x.transpose(0, 1), prev_state)
+        return output.transpose(0, 1), new_state.squeeze(0)
 
 class InformationIntegration(nn.Module):
     """
