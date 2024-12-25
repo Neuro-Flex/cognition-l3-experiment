@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from typing import Any, Callable, Optional, Tuple
-
+import math
 class GRUCell(nn.Module):
     """
     Gated Recurrent Unit cell with consciousness-aware gating mechanisms.
@@ -89,13 +89,15 @@ class InformationIntegration(nn.Module):
     """
     Implementation of Information Integration Theory (IIT) components.
     """
-    def __init__(self, hidden_dim: int, num_modules: int, dropout_rate: float = 0.1):
+    def __init__(self, hidden_dim: int, num_modules: int, input_dim: int = None, dropout_rate: float = 0.1):
         super().__init__()
         self.hidden_dim = hidden_dim
         self.num_modules = num_modules
         self.dropout_rate = dropout_rate
+        self.input_dim = input_dim if input_dim is not None else hidden_dim
         
-        self.input_projection = nn.Linear(hidden_dim, hidden_dim)
+        # Update input projection to handle correct dimensions
+        self.input_projection = nn.Linear(self.input_dim, hidden_dim) if self.input_dim != hidden_dim else nn.Identity()
         self.layer_norm = nn.LayerNorm(hidden_dim)
         self.multihead_attn = nn.MultiheadAttention(
             embed_dim=hidden_dim,
@@ -107,11 +109,10 @@ class InformationIntegration(nn.Module):
 
     def forward(self, inputs, deterministic=True):
         # Project inputs if needed
-        if inputs.size(-1) != self.hidden_dim:
-            inputs = self.input_projection(inputs)
+        x = self.input_projection(inputs)
             
         # Apply layer normalization
-        x = self.layer_norm(inputs)
+        x = self.layer_norm(x)
         
         # Apply self-attention
         y, _ = self.multihead_attn(x, x, x)

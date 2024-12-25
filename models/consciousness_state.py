@@ -26,6 +26,7 @@ class CognitiveProcessIntegration(nn.Module):
         # Add layer norm and dropout
         self.layer_norm = nn.LayerNorm(hidden_dim)
         self.dropout = nn.Dropout(dropout_rate)
+        self.cross_modal_projection = nn.Linear(hidden_dim, hidden_dim)
 
     def forward(self, inputs: Dict[str, torch.Tensor], deterministic: bool = True):
         processed_modalities = {}
@@ -43,18 +44,23 @@ class CognitiveProcessIntegration(nn.Module):
 
         for target_modality, target_features in processed_modalities.items():
             cross_modal_contexts = []
-            for source_modality, _ in processed_modalities.items():
+            for source_modality, source_features in processed_modalities.items():
                 if source_modality != target_modality:
-                    attention = nn.MultiheadAttention(embed_dim=self.hidden_dim, num_heads=self.num_heads, dropout=self.dropout_rate)
-                    mask = None  # Define 'mask' variable
-                    attended, _ = attention(processed_modalities[source_modality].unsqueeze(0), target_features.unsqueeze(0), target_features.unsqueeze(0), attn_mask=mask)
-                    cross_modal_contexts.append(attended.squeeze(0))
-                    attention_maps[f"{target_modality}-{source_modality}"] = attended
+                    # Reuse self.attention and pass 3D tensors directly
+                    attended, weights = self.attention(
+                        query=target_features,
+                        key=source_features,
+                        value=source_features,
+                        need_weights=True,
+                        average_attn_weights=False
+                    )
+                    cross_modal_contexts.append(attended)
+                    attention_maps[f"{target_modality}-{source_modality}"] = weights
 
             # Ensure tensor shapes match before combining
             if cross_modal_contexts:
                 combined = torch.mean(torch.stack(cross_modal_contexts), dim=0)
-                combined = nn.Linear(combined.size(-1), target_features.size(-1))(combined)
+                combined = self.cross_modal_projection(combined)
                 integrated = target_features + combined
             else:
                 integrated = target_features
@@ -90,47 +96,39 @@ class ConsciousnessStateManager(nn.Module):
         if input_dim != hidden_dim:
             self.input_projection = nn.Linear(input_dim, hidden_dim)
 
-    def forward(self, inputs: Dict[str, torch.Tensor], deterministic: bool = True):
-        # Project inputs if needed
-        if self.input_projection is not None:
-            processed_inputs = {k: self.input_projection(v) for k, v in inputs.items()}
-        else:
-            processed_inputs = inputs
+        # For RL "value"
+        self.value_network = nn.Linear(hidden_dim, 1)
 
-        # Process modalities
-        processed_modalities = {}
-        for modality, x in processed_inputs.items():
-            x = self.layer_norm(x)
-            if not deterministic:
-                x = nn.Dropout(p=self.dropout_rate)(x)
-            processed_modalities[modality] = x
+    def forward(self, state: torch.Tensor, inputs: torch.Tensor,
+                threshold: float = 0.5, deterministic: bool = True):
+        # Layer norm
+        state = self.layer_norm(state)
+        inputs = self.layer_norm(inputs)
+        if not deterministic:
+            drop = nn.Dropout(self.dropout_rate)
+            state = drop(state)
+            inputs = drop(inputs)
 
-        # Cross-modal attention integration
-        integrated_features = []
-        attention_maps = {}
+        # Compute memory gate
+        raw_gate = self.gate_network(state * inputs)
+        memory_gate = torch.sigmoid(raw_gate)         # shape [batch_size, hidden_dim]
 
-        for target_modality, target_features in processed_modalities.items():
-            cross_modal_contexts = []
-            for source_modality, _ in processed_modalities.items():
-                if source_modality != target_modality:
-                    attention = nn.MultiheadAttention(embed_dim=self.hidden_dim, num_heads=self.num_heads, dropout=self.dropout_rate)
-                    mask = None  # Define 'mask' variable
-                    attended, _ = attention(processed_modalities[source_modality].unsqueeze(0), target_features.unsqueeze(0), target_features.unsqueeze(0), attn_mask=mask)
-                    cross_modal_contexts.append(attended.squeeze(0))
-                    attention_maps[f"{target_modality}-{source_modality}"] = attended
+        # Apply threshold masking
+        mask = (memory_gate >= threshold).float()
+        memory_gate = memory_gate * mask
 
-            # Ensure tensor shapes match before combining
-            if cross_modal_contexts:
-                combined = torch.mean(torch.stack(cross_modal_contexts), dim=0)
-                combined = nn.Linear(combined.size(-1), target_features.size(-1))(combined)
-                integrated = target_features + combined
-            else:
-                integrated = target_features
+        # Update state
+        new_state = state + memory_gate * inputs
 
-            integrated_features.append(integrated)
-        # Final integration across all modalities
-        final_state = torch.mean(torch.stack(integrated_features), dim=0)
-        return final_state, attention_maps
+        # Calculate metrics
+        energy_cost = 1.0 - memory_gate.mean()  # single scalar
+        state_value = self.value_network(new_state)   # shape [batch_size, 1]
+        metrics = {
+            'memory_gate': memory_gate,
+            'energy_cost': energy_cost,
+            'state_value': state_value
+        }
+        return new_state, metrics
 
     def get_rl_loss(self, state_value, reward, next_state_value, gamma=0.99):
         """
@@ -143,7 +141,6 @@ class ConsciousnessStateManager(nn.Module):
             gamma: Discount factor
         """
         # Ensure reward has the same shape as state_value
-        reward = reward.unsqueeze(-1)
         td_target = reward + gamma * next_state_value
         td_error = td_target - state_value
 

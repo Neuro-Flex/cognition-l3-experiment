@@ -17,6 +17,7 @@ class TestInformationIntegration:
         return InformationIntegration(
             hidden_dim=64,
             num_modules=4,
+            input_dim=32,  # Add input_dim parameter
             dropout_rate=0.1
         ).to(device)
 

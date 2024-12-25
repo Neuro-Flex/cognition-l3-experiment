@@ -86,19 +86,22 @@ class TestConsciousnessStateManager:
         state_manager.eval()
         with torch.no_grad():
             # Test adaptation to different input patterns
-            # Case 1: Similar input to current state
+            # Case 1: Similar input to current state - should have higher memory gate values
+            # since we want more integration for similar cognitive content
             similar_input = state + torch.randn_like(state) * 0.1
             _, metrics1 = state_manager(state, similar_input, threshold=0.5, deterministic=True)
 
-            # Case 2: Very different input
+            # Case 2: Very different input - should have lower memory gate values
+            # since we want more filtering of dissimilar content 
             different_input = torch.randn(batch_size, hidden_dim, device=device)
             _, metrics2 = state_manager(state, different_input, threshold=0.5, deterministic=True)
 
-        # Memory gate should be more open (lower values) for different inputs
+        # Memory gate should be higher for similar inputs (more integration)
+        # and lower for different inputs (more filtering)
         assert torch.mean(metrics1['memory_gate']) > torch.mean(metrics2['memory_gate'])
 
-        # Energy cost should be higher for more different inputs
-        assert metrics2['energy_cost'].item() > metrics1['energy_cost'].item()
+        # Energy cost should be lower for similar inputs
+        assert metrics1['energy_cost'].item() < metrics2['energy_cost'].item()
 
     def test_state_consistency(self, device, state_manager):
         batch_size = 2
