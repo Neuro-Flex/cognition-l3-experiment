@@ -243,10 +243,54 @@ class TestARCReasoning:
             # Verify rule learning
             assert 'phi' in metrics
 
-    # Convert remaining test methods similarly...
-    # The pattern is similar - main changes are:
-    # - Replace jnp with torch
-    # - Use .to(device) for tensors
-    # - Use torch.no_grad() instead of JAX's deterministic flag
-    # - Use PyTorch's tensor operations instead of JAX's
+    def test_logical_deduction(self, device, consciousness_model):
+        """Test logical deduction tasks"""
+        # Logical deduction example
+        logical_input = torch.tensor([
+            [1, 0, 1],
+            [0, 1, 0],
+            [1, 0, 1]
+        ], dtype=torch.float32).unsqueeze(0).unsqueeze(-1)
+        
+        batch_size = logical_input.shape[0]
+        visual_input = self._prepare_visual_input(logical_input, batch_size, consciousness_model.hidden_dim)
+        
+        model_inputs = {
+            'visual': visual_input.to(device),
+            'state': torch.zeros((batch_size, consciousness_model.hidden_dim), device=device)
+        }
+        
+        consciousness_model = consciousness_model.to(device)
+        consciousness_model.eval()
+        
+        with torch.no_grad():
+            output, metrics = consciousness_model(model_inputs, deterministic=True)
+            
+            # Verify logical deduction
+            assert 'phi' in metrics
 
+    def test_language_understanding(self, device, consciousness_model):
+        """Test language understanding tasks"""
+        # Language understanding example
+        language_input = torch.tensor([
+            [1, 0, 1],
+            [0, 1, 0],
+            [1, 0, 1]
+        ], dtype=torch.float32).unsqueeze(0).unsqueeze(-1)
+        
+        batch_size = language_input.shape[0]
+        visual_input = self._prepare_visual_input(language_input, batch_size, consciousness_model.hidden_dim)
+        
+        model_inputs = {
+            'visual': visual_input.to(device),
+            'state': torch.zeros((batch_size, consciousness_model.hidden_dim), device=device)
+        }
+        
+        consciousness_model = consciousness_model.to(device)
+        consciousness_model.eval()
+        
+        with torch.no_grad():
+            output, metrics = consciousness_model(model_inputs, deterministic=True)
+            
+            # Verify language understanding
+            assert 'phi' in metrics

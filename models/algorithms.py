@@ -24,6 +24,12 @@ class AttentionMechanisms(nn.Module):
         self.value = nn.Linear(hidden_dim, hidden_dim)
         self.output = nn.Linear(hidden_dim, hidden_dim)
 
+        # Logical deduction components
+        self.deduction_query = nn.Linear(hidden_dim, hidden_dim)
+        self.deduction_key = nn.Linear(hidden_dim, hidden_dim)
+        self.deduction_value = nn.Linear(hidden_dim, hidden_dim)
+        self.deduction_output = nn.Linear(hidden_dim, hidden_dim)
+
     def scaled_dot_product_attention(self, query, key, value, mask=None):
         d_k = query.size(-1)
         attention_scores = torch.matmul(query, key.transpose(-2, -1))
@@ -38,6 +44,27 @@ class AttentionMechanisms(nn.Module):
         
         attention_weights = torch.softmax(attention_scores, dim=-1)
         return torch.matmul(attention_weights, value)
+
+    def logical_deduction(self, inputs: torch.Tensor) -> torch.Tensor:
+        batch_size = inputs.size(0)
+        head_dim = self.hidden_dim // self.num_heads
+        
+        # Project inputs for logical deduction
+        query = self.deduction_query(inputs)
+        key = self.deduction_key(inputs)
+        value = self.deduction_value(inputs)
+        
+        # Reshape for multi-head attention
+        query = query.view(batch_size, -1, self.num_heads, head_dim)
+        key = key.view(batch_size, -1, self.num_heads, head_dim)
+        value = value.view(batch_size, -1, self.num_heads, head_dim)
+        
+        # Apply attention for logical deduction
+        deduction_output = self.scaled_dot_product_attention(query, key, value)
+        
+        # Reshape and project output
+        deduction_output = deduction_output.view(batch_size, -1, self.hidden_dim)
+        return self.deduction_output(deduction_output)
 
     def forward(self, inputs: torch.Tensor, training: bool = False) -> torch.Tensor:
         batch_size = inputs.size(0)
@@ -58,7 +85,15 @@ class AttentionMechanisms(nn.Module):
         
         # Reshape and project output
         attention_output = attention_output.view(batch_size, -1, self.hidden_dim)
-        return self.output(attention_output)
+        attention_output = self.output(attention_output)
+        
+        # Apply logical deduction
+        deduction_output = self.logical_deduction(inputs)
+        
+        # Combine attention and deduction outputs
+        combined_output = attention_output + deduction_output
+        
+        return combined_output
 
 class InformationIntegration(nn.Module):
     def __init__(self, hidden_dim: int = 512):
@@ -66,20 +101,26 @@ class InformationIntegration(nn.Module):
         self.hidden_dim = hidden_dim
         self.phi_computation = nn.Linear(hidden_dim, hidden_dim)
         self.integration_gate = nn.Linear(hidden_dim, hidden_dim)
+        self.language_understanding = nn.Linear(hidden_dim, hidden_dim)
 
     def compute_phi(self, states: torch.Tensor) -> torch.Tensor:
         phi_raw = self.phi_computation(states)
         return torch.tanh(phi_raw)
 
+    def language_understanding_task(self, states: torch.Tensor) -> torch.Tensor:
+        return torch.relu(self.language_understanding(states))
+
     def forward(self, states: torch.Tensor) -> Dict[str, torch.Tensor]:
         phi = self.compute_phi(states)
         gate = torch.sigmoid(self.integration_gate(states))
         integrated_state = gate * phi + (1 - gate) * states
+        language_output = self.language_understanding_task(states)
         
         return {
             'integrated_state': integrated_state,
             'phi': phi,
-            'integration_gate': gate
+            'integration_gate': gate,
+            'language_output': language_output
         }
 
 class WorkingMemory(nn.Module):
