@@ -2,502 +2,23 @@
 platform linux -- Python 3.10.12, pytest-8.3.4, pluggy-1.5.0
 rootdir: /home/kasinadhsarma/experiment/cognition-l3-experiment
 plugins: cov-6.0.0, anyio-4.7.0
-collected 45 items
+collected 47 items
 
-tests/test_consciousness.py .F..FF                                       [ 13%]
-tests/test_environment.py FFF..                                          [ 24%]
-tests/unit/attention/test_attention.py FFFF                              [ 33%]
-tests/unit/attention/test_attention_mechanisms.py ....                   [ 42%]
-tests/unit/integration/test_cognitive_integration.py FFFF                [ 51%]
-tests/unit/integration/test_state_management.py ..F.                     [ 60%]
-tests/unit/memory/test_integration.py FFFF                               [ 68%]
-tests/unit/memory/test_memory.py .EEEE                                   [ 80%]
-tests/unit/memory/test_memory_components.py FFFF                         [ 88%]
+tests/test_consciousness.py .F..FF                                       [ 12%]
+tests/test_environment.py FFF..                                          [ 23%]
+tests/unit/attention/test_attention.py FFFF                              [ 31%]
+tests/unit/attention/test_attention_mechanisms.py ....                   [ 40%]
+tests/unit/integration/test_cognitive_integration.py FFFF                [ 48%]
+tests/unit/integration/test_state_management.py FFF.                     [ 57%]
+tests/unit/memory/test_integration.py FFFF                               [ 65%]
+tests/unit/memory/test_memory.py .FF.FF.                                 [ 80%]
+tests/unit/memory/test_memory_components.py FFFF                         [ 89%]
 tests/unit/state/test_consciousness_state_management.py FF..F            [100%]
 
-==================================== ERRORS ====================================
-____ ERROR at setup of TestMemoryComponents.test_memory_sequence_processing ____
-
-self = <test_memory.TestMemoryComponents object at 0x7b4a4aeadc60>
-hidden_dim = 64
-
-    @pytest.fixture
-    def working_memory(self, hidden_dim):
-        """Create working memory module for testing."""
-        return WorkingMemory(
-            input_dim=hidden_dim,
-            hidden_dim=hidden_dim,
-            dropout_rate=0.1
->       ).to(self.device)
-
-tests/unit/memory/test_memory.py:37: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-
-self = WorkingMemory(
-  (lstm): LSTMCell(64, 64)
-  (dropout): Dropout(p=0.1, inplace=False)
-)
-args = (<bound method TestMemoryComponents.device of <test_memory.TestMemoryComponents object at 0x7b4a4aeadc60>>,)
-kwargs = {}
-
-    def to(self, *args, **kwargs):
-        r"""Move and/or cast the parameters and buffers.
-    
-        This can be called as
-    
-        .. function:: to(device=None, dtype=None, non_blocking=False)
-           :noindex:
-    
-        .. function:: to(dtype, non_blocking=False)
-           :noindex:
-    
-        .. function:: to(tensor, non_blocking=False)
-           :noindex:
-    
-        .. function:: to(memory_format=torch.channels_last)
-           :noindex:
-    
-        Its signature is similar to :meth:`torch.Tensor.to`, but only accepts
-        floating point or complex :attr:`dtype`\ s. In addition, this method will
-        only cast the floating point or complex parameters and buffers to :attr:`dtype`
-        (if given). The integral parameters and buffers will be moved
-        :attr:`device`, if that is given, but with dtypes unchanged. When
-        :attr:`non_blocking` is set, it tries to convert/move asynchronously
-        with respect to the host if possible, e.g., moving CPU Tensors with
-        pinned memory to CUDA devices.
-    
-        See below for examples.
-    
-        .. note::
-            This method modifies the module in-place.
-    
-        Args:
-            device (:class:`torch.device`): the desired device of the parameters
-                and buffers in this module
-            dtype (:class:`torch.dtype`): the desired floating point or complex dtype of
-                the parameters and buffers in this module
-            tensor (torch.Tensor): Tensor whose dtype and device are the desired
-                dtype and device for all parameters and buffers in this module
-            memory_format (:class:`torch.memory_format`): the desired memory
-                format for 4D parameters and buffers in this module (keyword
-                only argument)
-    
-        Returns:
-            Module: self
-    
-        Examples::
-    
-            >>> # xdoctest: +IGNORE_WANT("non-deterministic")
-            >>> linear = nn.Linear(2, 2)
-            >>> linear.weight
-            Parameter containing:
-            tensor([[ 0.1913, -0.3420],
-                    [-0.5113, -0.2325]])
-            >>> linear.to(torch.double)
-            Linear(in_features=2, out_features=2, bias=True)
-            >>> linear.weight
-            Parameter containing:
-            tensor([[ 0.1913, -0.3420],
-                    [-0.5113, -0.2325]], dtype=torch.float64)
-            >>> # xdoctest: +REQUIRES(env:TORCH_DOCTEST_CUDA1)
-            >>> gpu1 = torch.device("cuda:1")
-            >>> linear.to(gpu1, dtype=torch.half, non_blocking=True)
-            Linear(in_features=2, out_features=2, bias=True)
-            >>> linear.weight
-            Parameter containing:
-            tensor([[ 0.1914, -0.3420],
-                    [-0.5112, -0.2324]], dtype=torch.float16, device='cuda:1')
-            >>> cpu = torch.device("cpu")
-            >>> linear.to(cpu)
-            Linear(in_features=2, out_features=2, bias=True)
-            >>> linear.weight
-            Parameter containing:
-            tensor([[ 0.1914, -0.3420],
-                    [-0.5112, -0.2324]], dtype=torch.float16)
-    
-            >>> linear = nn.Linear(2, 2, bias=None).to(torch.cdouble)
-            >>> linear.weight
-            Parameter containing:
-            tensor([[ 0.3741+0.j,  0.2382+0.j],
-                    [ 0.5593+0.j, -0.4443+0.j]], dtype=torch.complex128)
-            >>> linear(torch.ones(3, 2, dtype=torch.cdouble))
-            tensor([[0.6122+0.j, 0.1150+0.j],
-                    [0.6122+0.j, 0.1150+0.j],
-                    [0.6122+0.j, 0.1150+0.j]], dtype=torch.complex128)
-    
-        """
->       device, dtype, non_blocking, convert_to_format = torch._C._nn._parse_to(
-            *args, **kwargs
-        )
-E       TypeError: to() received an invalid combination of arguments - got (method), but expected one of:
-E        * (torch.device device = None, torch.dtype dtype = None, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
-E        * (torch.dtype dtype, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
-E        * (Tensor tensor, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
-
-../../.local/lib/python3.10/site-packages/torch/nn/modules/module.py:1299: TypeError
-_______ ERROR at setup of TestMemoryComponents.test_context_aware_gating _______
-
-self = <test_memory.TestMemoryComponents object at 0x7b4a4aeade40>
-hidden_dim = 64
-
-    @pytest.fixture
-    def working_memory(self, hidden_dim):
-        """Create working memory module for testing."""
-        return WorkingMemory(
-            input_dim=hidden_dim,
-            hidden_dim=hidden_dim,
-            dropout_rate=0.1
->       ).to(self.device)
-
-tests/unit/memory/test_memory.py:37: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-
-self = WorkingMemory(
-  (lstm): LSTMCell(64, 64)
-  (dropout): Dropout(p=0.1, inplace=False)
-)
-args = (<bound method TestMemoryComponents.device of <test_memory.TestMemoryComponents object at 0x7b4a4aeade40>>,)
-kwargs = {}
-
-    def to(self, *args, **kwargs):
-        r"""Move and/or cast the parameters and buffers.
-    
-        This can be called as
-    
-        .. function:: to(device=None, dtype=None, non_blocking=False)
-           :noindex:
-    
-        .. function:: to(dtype, non_blocking=False)
-           :noindex:
-    
-        .. function:: to(tensor, non_blocking=False)
-           :noindex:
-    
-        .. function:: to(memory_format=torch.channels_last)
-           :noindex:
-    
-        Its signature is similar to :meth:`torch.Tensor.to`, but only accepts
-        floating point or complex :attr:`dtype`\ s. In addition, this method will
-        only cast the floating point or complex parameters and buffers to :attr:`dtype`
-        (if given). The integral parameters and buffers will be moved
-        :attr:`device`, if that is given, but with dtypes unchanged. When
-        :attr:`non_blocking` is set, it tries to convert/move asynchronously
-        with respect to the host if possible, e.g., moving CPU Tensors with
-        pinned memory to CUDA devices.
-    
-        See below for examples.
-    
-        .. note::
-            This method modifies the module in-place.
-    
-        Args:
-            device (:class:`torch.device`): the desired device of the parameters
-                and buffers in this module
-            dtype (:class:`torch.dtype`): the desired floating point or complex dtype of
-                the parameters and buffers in this module
-            tensor (torch.Tensor): Tensor whose dtype and device are the desired
-                dtype and device for all parameters and buffers in this module
-            memory_format (:class:`torch.memory_format`): the desired memory
-                format for 4D parameters and buffers in this module (keyword
-                only argument)
-    
-        Returns:
-            Module: self
-    
-        Examples::
-    
-            >>> # xdoctest: +IGNORE_WANT("non-deterministic")
-            >>> linear = nn.Linear(2, 2)
-            >>> linear.weight
-            Parameter containing:
-            tensor([[ 0.1913, -0.3420],
-                    [-0.5113, -0.2325]])
-            >>> linear.to(torch.double)
-            Linear(in_features=2, out_features=2, bias=True)
-            >>> linear.weight
-            Parameter containing:
-            tensor([[ 0.1913, -0.3420],
-                    [-0.5113, -0.2325]], dtype=torch.float64)
-            >>> # xdoctest: +REQUIRES(env:TORCH_DOCTEST_CUDA1)
-            >>> gpu1 = torch.device("cuda:1")
-            >>> linear.to(gpu1, dtype=torch.half, non_blocking=True)
-            Linear(in_features=2, out_features=2, bias=True)
-            >>> linear.weight
-            Parameter containing:
-            tensor([[ 0.1914, -0.3420],
-                    [-0.5112, -0.2324]], dtype=torch.float16, device='cuda:1')
-            >>> cpu = torch.device("cpu")
-            >>> linear.to(cpu)
-            Linear(in_features=2, out_features=2, bias=True)
-            >>> linear.weight
-            Parameter containing:
-            tensor([[ 0.1914, -0.3420],
-                    [-0.5112, -0.2324]], dtype=torch.float16)
-    
-            >>> linear = nn.Linear(2, 2, bias=None).to(torch.cdouble)
-            >>> linear.weight
-            Parameter containing:
-            tensor([[ 0.3741+0.j,  0.2382+0.j],
-                    [ 0.5593+0.j, -0.4443+0.j]], dtype=torch.complex128)
-            >>> linear(torch.ones(3, 2, dtype=torch.cdouble))
-            tensor([[0.6122+0.j, 0.1150+0.j],
-                    [0.6122+0.j, 0.1150+0.j],
-                    [0.6122+0.j, 0.1150+0.j]], dtype=torch.complex128)
-    
-        """
->       device, dtype, non_blocking, convert_to_format = torch._C._nn._parse_to(
-            *args, **kwargs
-        )
-E       TypeError: to() received an invalid combination of arguments - got (method), but expected one of:
-E        * (torch.device device = None, torch.dtype dtype = None, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
-E        * (torch.dtype dtype, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
-E        * (Tensor tensor, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
-
-../../.local/lib/python3.10/site-packages/torch/nn/modules/module.py:1299: TypeError
-_____ ERROR at setup of TestMemoryComponents.test_information_integration ______
-
-self = <test_memory.TestMemoryComponents object at 0x7b4a4aeae020>
-hidden_dim = 64
-
-    @pytest.fixture
-    def info_integration(self, hidden_dim):
-        """Create information integration module for testing."""
-        return InformationIntegration(
-            hidden_dim=hidden_dim,
-            num_modules=4,
-            dropout_rate=0.1
->       ).to(self.device)
-
-tests/unit/memory/test_memory.py:46: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-
-self = InformationIntegration(
-  (input_projection): Linear(in_features=64, out_features=64, bias=True)
-  (layer_norm): Layer...namicallyQuantizableLinear(in_features=64, out_features=64, bias=True)
-  )
-  (dropout): Dropout(p=0.1, inplace=False)
-)
-args = (<bound method TestMemoryComponents.device of <test_memory.TestMemoryComponents object at 0x7b4a4aeae020>>,)
-kwargs = {}
-
-    def to(self, *args, **kwargs):
-        r"""Move and/or cast the parameters and buffers.
-    
-        This can be called as
-    
-        .. function:: to(device=None, dtype=None, non_blocking=False)
-           :noindex:
-    
-        .. function:: to(dtype, non_blocking=False)
-           :noindex:
-    
-        .. function:: to(tensor, non_blocking=False)
-           :noindex:
-    
-        .. function:: to(memory_format=torch.channels_last)
-           :noindex:
-    
-        Its signature is similar to :meth:`torch.Tensor.to`, but only accepts
-        floating point or complex :attr:`dtype`\ s. In addition, this method will
-        only cast the floating point or complex parameters and buffers to :attr:`dtype`
-        (if given). The integral parameters and buffers will be moved
-        :attr:`device`, if that is given, but with dtypes unchanged. When
-        :attr:`non_blocking` is set, it tries to convert/move asynchronously
-        with respect to the host if possible, e.g., moving CPU Tensors with
-        pinned memory to CUDA devices.
-    
-        See below for examples.
-    
-        .. note::
-            This method modifies the module in-place.
-    
-        Args:
-            device (:class:`torch.device`): the desired device of the parameters
-                and buffers in this module
-            dtype (:class:`torch.dtype`): the desired floating point or complex dtype of
-                the parameters and buffers in this module
-            tensor (torch.Tensor): Tensor whose dtype and device are the desired
-                dtype and device for all parameters and buffers in this module
-            memory_format (:class:`torch.memory_format`): the desired memory
-                format for 4D parameters and buffers in this module (keyword
-                only argument)
-    
-        Returns:
-            Module: self
-    
-        Examples::
-    
-            >>> # xdoctest: +IGNORE_WANT("non-deterministic")
-            >>> linear = nn.Linear(2, 2)
-            >>> linear.weight
-            Parameter containing:
-            tensor([[ 0.1913, -0.3420],
-                    [-0.5113, -0.2325]])
-            >>> linear.to(torch.double)
-            Linear(in_features=2, out_features=2, bias=True)
-            >>> linear.weight
-            Parameter containing:
-            tensor([[ 0.1913, -0.3420],
-                    [-0.5113, -0.2325]], dtype=torch.float64)
-            >>> # xdoctest: +REQUIRES(env:TORCH_DOCTEST_CUDA1)
-            >>> gpu1 = torch.device("cuda:1")
-            >>> linear.to(gpu1, dtype=torch.half, non_blocking=True)
-            Linear(in_features=2, out_features=2, bias=True)
-            >>> linear.weight
-            Parameter containing:
-            tensor([[ 0.1914, -0.3420],
-                    [-0.5112, -0.2324]], dtype=torch.float16, device='cuda:1')
-            >>> cpu = torch.device("cpu")
-            >>> linear.to(cpu)
-            Linear(in_features=2, out_features=2, bias=True)
-            >>> linear.weight
-            Parameter containing:
-            tensor([[ 0.1914, -0.3420],
-                    [-0.5112, -0.2324]], dtype=torch.float16)
-    
-            >>> linear = nn.Linear(2, 2, bias=None).to(torch.cdouble)
-            >>> linear.weight
-            Parameter containing:
-            tensor([[ 0.3741+0.j,  0.2382+0.j],
-                    [ 0.5593+0.j, -0.4443+0.j]], dtype=torch.complex128)
-            >>> linear(torch.ones(3, 2, dtype=torch.cdouble))
-            tensor([[0.6122+0.j, 0.1150+0.j],
-                    [0.6122+0.j, 0.1150+0.j],
-                    [0.6122+0.j, 0.1150+0.j]], dtype=torch.complex128)
-    
-        """
->       device, dtype, non_blocking, convert_to_format = torch._C._nn._parse_to(
-            *args, **kwargs
-        )
-E       TypeError: to() received an invalid combination of arguments - got (method), but expected one of:
-E        * (torch.device device = None, torch.dtype dtype = None, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
-E        * (torch.dtype dtype, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
-E        * (Tensor tensor, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
-
-../../.local/lib/python3.10/site-packages/torch/nn/modules/module.py:1299: TypeError
-_________ ERROR at setup of TestMemoryComponents.test_memory_retention _________
-
-self = <test_memory.TestMemoryComponents object at 0x7b4a4aeae200>
-hidden_dim = 64
-
-    @pytest.fixture
-    def working_memory(self, hidden_dim):
-        """Create working memory module for testing."""
-        return WorkingMemory(
-            input_dim=hidden_dim,
-            hidden_dim=hidden_dim,
-            dropout_rate=0.1
->       ).to(self.device)
-
-tests/unit/memory/test_memory.py:37: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
-
-self = WorkingMemory(
-  (lstm): LSTMCell(64, 64)
-  (dropout): Dropout(p=0.1, inplace=False)
-)
-args = (<bound method TestMemoryComponents.device of <test_memory.TestMemoryComponents object at 0x7b4a4aeae200>>,)
-kwargs = {}
-
-    def to(self, *args, **kwargs):
-        r"""Move and/or cast the parameters and buffers.
-    
-        This can be called as
-    
-        .. function:: to(device=None, dtype=None, non_blocking=False)
-           :noindex:
-    
-        .. function:: to(dtype, non_blocking=False)
-           :noindex:
-    
-        .. function:: to(tensor, non_blocking=False)
-           :noindex:
-    
-        .. function:: to(memory_format=torch.channels_last)
-           :noindex:
-    
-        Its signature is similar to :meth:`torch.Tensor.to`, but only accepts
-        floating point or complex :attr:`dtype`\ s. In addition, this method will
-        only cast the floating point or complex parameters and buffers to :attr:`dtype`
-        (if given). The integral parameters and buffers will be moved
-        :attr:`device`, if that is given, but with dtypes unchanged. When
-        :attr:`non_blocking` is set, it tries to convert/move asynchronously
-        with respect to the host if possible, e.g., moving CPU Tensors with
-        pinned memory to CUDA devices.
-    
-        See below for examples.
-    
-        .. note::
-            This method modifies the module in-place.
-    
-        Args:
-            device (:class:`torch.device`): the desired device of the parameters
-                and buffers in this module
-            dtype (:class:`torch.dtype`): the desired floating point or complex dtype of
-                the parameters and buffers in this module
-            tensor (torch.Tensor): Tensor whose dtype and device are the desired
-                dtype and device for all parameters and buffers in this module
-            memory_format (:class:`torch.memory_format`): the desired memory
-                format for 4D parameters and buffers in this module (keyword
-                only argument)
-    
-        Returns:
-            Module: self
-    
-        Examples::
-    
-            >>> # xdoctest: +IGNORE_WANT("non-deterministic")
-            >>> linear = nn.Linear(2, 2)
-            >>> linear.weight
-            Parameter containing:
-            tensor([[ 0.1913, -0.3420],
-                    [-0.5113, -0.2325]])
-            >>> linear.to(torch.double)
-            Linear(in_features=2, out_features=2, bias=True)
-            >>> linear.weight
-            Parameter containing:
-            tensor([[ 0.1913, -0.3420],
-                    [-0.5113, -0.2325]], dtype=torch.float64)
-            >>> # xdoctest: +REQUIRES(env:TORCH_DOCTEST_CUDA1)
-            >>> gpu1 = torch.device("cuda:1")
-            >>> linear.to(gpu1, dtype=torch.half, non_blocking=True)
-            Linear(in_features=2, out_features=2, bias=True)
-            >>> linear.weight
-            Parameter containing:
-            tensor([[ 0.1914, -0.3420],
-                    [-0.5112, -0.2324]], dtype=torch.float16, device='cuda:1')
-            >>> cpu = torch.device("cpu")
-            >>> linear.to(cpu)
-            Linear(in_features=2, out_features=2, bias=True)
-            >>> linear.weight
-            Parameter containing:
-            tensor([[ 0.1914, -0.3420],
-                    [-0.5112, -0.2324]], dtype=torch.float16)
-    
-            >>> linear = nn.Linear(2, 2, bias=None).to(torch.cdouble)
-            >>> linear.weight
-            Parameter containing:
-            tensor([[ 0.3741+0.j,  0.2382+0.j],
-                    [ 0.5593+0.j, -0.4443+0.j]], dtype=torch.complex128)
-            >>> linear(torch.ones(3, 2, dtype=torch.cdouble))
-            tensor([[0.6122+0.j, 0.1150+0.j],
-                    [0.6122+0.j, 0.1150+0.j],
-                    [0.6122+0.j, 0.1150+0.j]], dtype=torch.complex128)
-    
-        """
->       device, dtype, non_blocking, convert_to_format = torch._C._nn._parse_to(
-            *args, **kwargs
-        )
-E       TypeError: to() received an invalid combination of arguments - got (method), but expected one of:
-E        * (torch.device device = None, torch.dtype dtype = None, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
-E        * (torch.dtype dtype, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
-E        * (Tensor tensor, bool non_blocking = False, bool copy = False, *, torch.memory_format memory_format = None)
-
-../../.local/lib/python3.10/site-packages/torch/nn/modules/module.py:1299: TypeError
 =================================== FAILURES ===================================
 ________________ TestConsciousnessModel.test_model_forward_pass ________________
 
-self = <test_consciousness.TestConsciousnessModel object at 0x7b4a4ae026b0>
+self = <test_consciousness.TestConsciousnessModel object at 0x74d4e1eda350>
 model = ConsciousnessModel(
   (global_workspace): GlobalWorkspace(
     (layer_norm1): LayerNorm((128,), eps=1e-05, elementwise...MultiheadAttention(
@@ -525,38 +46,36 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     return self._call_impl(*args, **kwargs)
 ../../.local/lib/python3.10/site-packages/torch/nn/modules/module.py:1747: in _call_impl
     return forward_call(*args, **kwargs)
-models/consciousness_model.py:97: in forward
-    workspace_output, attention_weights = self.global_workspace(
+models/consciousness_model.py:118: in forward
+    consciousness_state, attention_maps = self.cognitive_integration(
 ../../.local/lib/python3.10/site-packages/torch/nn/modules/module.py:1736: in _wrapped_call_impl
     return self._call_impl(*args, **kwargs)
+../../.local/lib/python3.10/site-packages/torch/nn/modules/module.py:1747: in _call_impl
+    return forward_call(*args, **kwargs)
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-self = GlobalWorkspace(
-  (layer_norm1): LayerNorm((128,), eps=1e-05, elementwise_affine=True)
-  (layer_norm2): LayerNorm((12...place=False)
-    (3): Linear(in_features=512, out_features=128, bias=True)
-    (4): Dropout(p=0.1, inplace=False)
+self = CognitiveProcessIntegration(
+  (attention): MultiheadAttention(
+    (out_proj): NonDynamicallyQuantizableLinear(in_fea...
   )
+  (layer_norm): LayerNorm((128,), eps=1e-05, elementwise_affine=True)
+  (dropout): Dropout(p=0.1, inplace=False)
 )
-args = (tensor([[[ 1.9269,  1.4873,  0.9007,  ...,  0.3399,  0.7200,  0.4114],
-         [ 1.9312,  1.0119, -1.4364,  ...,  0....,  0.2921,  ...,  0.6600, -0.1619,  0.8861],
-         [ 0.5484,  0.4577,  0.9677,  ..., -0.0334, -0.8276, -0.3524]]]),)
-kwargs = {'deterministic': True}
+inputs = {'attention': tensor([[[ 1.9269,  1.4873,  0.9007,  ...,  0.3399,  0.7200,  0.4114],
+         [ 1.9312,  1.0119, -1.43...6,  0.2921,  ...,  0.6600, -0.1619,  0.8861],
+         [ 0.5484,  0.4577,  0.9677,  ..., -0.0334, -0.8276, -0.3524]]])}
+deterministic = True
 
-    def _call_impl(self, *args, **kwargs):
-        forward_call = (self._slow_forward if torch._C._get_tracing_state() else self.forward)
-        # If we don't have any hooks, we want to skip the rest of the logic in
-        # this function, and just call forward.
-        if not (self._backward_hooks or self._backward_pre_hooks or self._forward_hooks or self._forward_pre_hooks
-                or _global_backward_pre_hooks or _global_backward_hooks
-                or _global_forward_hooks or _global_forward_pre_hooks):
->           return forward_call(*args, **kwargs)
-E           TypeError: GlobalWorkspace.forward() got an unexpected keyword argument 'deterministic'
+    def forward(self, inputs: Dict[str, torch.Tensor], deterministic: bool = True):
+        processed_modalities = {}
+        for modality, x in inputs.items():
+>           x = nn.LayerNorm()(x)
+E           TypeError: LayerNorm.__init__() missing 1 required positional argument: 'normalized_shape'
 
-../../.local/lib/python3.10/site-packages/torch/nn/modules/module.py:1747: TypeError
+models/consciousness_state.py:31: TypeError
 ________________ TestConsciousnessModel.test_model_state_update ________________
 
-self = <test_consciousness.TestConsciousnessModel object at 0x7b4a4ae02d70>
+self = <test_consciousness.TestConsciousnessModel object at 0x74d4e1edaa10>
 model = ConsciousnessModel(
   (global_workspace): GlobalWorkspace(
     (layer_norm1): LayerNorm((128,), eps=1e-05, elementwise...MultiheadAttention(
@@ -582,38 +101,36 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     return self._call_impl(*args, **kwargs)
 ../../.local/lib/python3.10/site-packages/torch/nn/modules/module.py:1747: in _call_impl
     return forward_call(*args, **kwargs)
-models/consciousness_model.py:97: in forward
-    workspace_output, attention_weights = self.global_workspace(
+models/consciousness_model.py:118: in forward
+    consciousness_state, attention_maps = self.cognitive_integration(
 ../../.local/lib/python3.10/site-packages/torch/nn/modules/module.py:1736: in _wrapped_call_impl
     return self._call_impl(*args, **kwargs)
+../../.local/lib/python3.10/site-packages/torch/nn/modules/module.py:1747: in _call_impl
+    return forward_call(*args, **kwargs)
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-self = GlobalWorkspace(
-  (layer_norm1): LayerNorm((128,), eps=1e-05, elementwise_affine=True)
-  (layer_norm2): LayerNorm((12...place=False)
-    (3): Linear(in_features=512, out_features=128, bias=True)
-    (4): Dropout(p=0.1, inplace=False)
+self = CognitiveProcessIntegration(
+  (attention): MultiheadAttention(
+    (out_proj): NonDynamicallyQuantizableLinear(in_fea...
   )
+  (layer_norm): LayerNorm((128,), eps=1e-05, elementwise_affine=True)
+  (dropout): Dropout(p=0.1, inplace=False)
 )
-args = (tensor([[[ 1.9269,  1.4873,  0.9007,  ...,  0.3399,  0.7200,  0.4114],
-         [ 1.9312,  1.0119, -1.4364,  ...,  0....,  0.2921,  ...,  0.6600, -0.1619,  0.8861],
-         [ 0.5484,  0.4577,  0.9677,  ..., -0.0334, -0.8276, -0.3524]]]),)
-kwargs = {'deterministic': True}
+inputs = {'attention': tensor([[[ 1.9269,  1.4873,  0.9007,  ...,  0.3399,  0.7200,  0.4114],
+         [ 1.9312,  1.0119, -1.43...6,  0.2921,  ...,  0.6600, -0.1619,  0.8861],
+         [ 0.5484,  0.4577,  0.9677,  ..., -0.0334, -0.8276, -0.3524]]])}
+deterministic = True
 
-    def _call_impl(self, *args, **kwargs):
-        forward_call = (self._slow_forward if torch._C._get_tracing_state() else self.forward)
-        # If we don't have any hooks, we want to skip the rest of the logic in
-        # this function, and just call forward.
-        if not (self._backward_hooks or self._backward_pre_hooks or self._forward_hooks or self._forward_pre_hooks
-                or _global_backward_pre_hooks or _global_backward_hooks
-                or _global_forward_hooks or _global_forward_pre_hooks):
->           return forward_call(*args, **kwargs)
-E           TypeError: GlobalWorkspace.forward() got an unexpected keyword argument 'deterministic'
+    def forward(self, inputs: Dict[str, torch.Tensor], deterministic: bool = True):
+        processed_modalities = {}
+        for modality, x in inputs.items():
+>           x = nn.LayerNorm()(x)
+E           TypeError: LayerNorm.__init__() missing 1 required positional argument: 'normalized_shape'
 
-../../.local/lib/python3.10/site-packages/torch/nn/modules/module.py:1747: TypeError
+models/consciousness_state.py:31: TypeError
 _____________ TestConsciousnessModel.test_model_attention_weights ______________
 
-self = <test_consciousness.TestConsciousnessModel object at 0x7b4a4ae02fe0>
+self = <test_consciousness.TestConsciousnessModel object at 0x74d4e1edac80>
 model = ConsciousnessModel(
   (global_workspace): GlobalWorkspace(
     (layer_norm1): LayerNorm((128,), eps=1e-05, elementwise...MultiheadAttention(
@@ -639,35 +156,33 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     return self._call_impl(*args, **kwargs)
 ../../.local/lib/python3.10/site-packages/torch/nn/modules/module.py:1747: in _call_impl
     return forward_call(*args, **kwargs)
-models/consciousness_model.py:97: in forward
-    workspace_output, attention_weights = self.global_workspace(
+models/consciousness_model.py:118: in forward
+    consciousness_state, attention_maps = self.cognitive_integration(
 ../../.local/lib/python3.10/site-packages/torch/nn/modules/module.py:1736: in _wrapped_call_impl
     return self._call_impl(*args, **kwargs)
+../../.local/lib/python3.10/site-packages/torch/nn/modules/module.py:1747: in _call_impl
+    return forward_call(*args, **kwargs)
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-self = GlobalWorkspace(
-  (layer_norm1): LayerNorm((128,), eps=1e-05, elementwise_affine=True)
-  (layer_norm2): LayerNorm((12...place=False)
-    (3): Linear(in_features=512, out_features=128, bias=True)
-    (4): Dropout(p=0.1, inplace=False)
+self = CognitiveProcessIntegration(
+  (attention): MultiheadAttention(
+    (out_proj): NonDynamicallyQuantizableLinear(in_fea...
   )
+  (layer_norm): LayerNorm((128,), eps=1e-05, elementwise_affine=True)
+  (dropout): Dropout(p=0.1, inplace=False)
 )
-args = (tensor([[[ 1.9269,  1.4873,  0.9007,  ...,  0.3399,  0.7200,  0.4114],
-         [ 1.9312,  1.0119, -1.4364,  ...,  0....,  0.2921,  ...,  0.6600, -0.1619,  0.8861],
-         [ 0.5484,  0.4577,  0.9677,  ..., -0.0334, -0.8276, -0.3524]]]),)
-kwargs = {'deterministic': True}
+inputs = {'attention': tensor([[[ 1.9269,  1.4873,  0.9007,  ...,  0.3399,  0.7200,  0.4114],
+         [ 1.9312,  1.0119, -1.43...6,  0.2921,  ...,  0.6600, -0.1619,  0.8861],
+         [ 0.5484,  0.4577,  0.9677,  ..., -0.0334, -0.8276, -0.3524]]])}
+deterministic = True
 
-    def _call_impl(self, *args, **kwargs):
-        forward_call = (self._slow_forward if torch._C._get_tracing_state() else self.forward)
-        # If we don't have any hooks, we want to skip the rest of the logic in
-        # this function, and just call forward.
-        if not (self._backward_hooks or self._backward_pre_hooks or self._forward_hooks or self._forward_pre_hooks
-                or _global_backward_pre_hooks or _global_backward_hooks
-                or _global_forward_hooks or _global_forward_pre_hooks):
->           return forward_call(*args, **kwargs)
-E           TypeError: GlobalWorkspace.forward() got an unexpected keyword argument 'deterministic'
+    def forward(self, inputs: Dict[str, torch.Tensor], deterministic: bool = True):
+        processed_modalities = {}
+        for modality, x in inputs.items():
+>           x = nn.LayerNorm()(x)
+E           TypeError: LayerNorm.__init__() missing 1 required positional argument: 'normalized_shape'
 
-../../.local/lib/python3.10/site-packages/torch/nn/modules/module.py:1747: TypeError
+models/consciousness_state.py:31: TypeError
 ______________________ EnvironmentTests.test_core_imports ______________________
 
 self = <test_environment.EnvironmentTests testMethod=test_core_imports>
@@ -690,8 +205,8 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     handle = entry.fake_impl.register(func_to_register, source)
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-self = <torch._library.fake_impl.FakeImplHolder object at 0x7b4a4acd1de0>
-func = <function meta_nms at 0x7b4a4adcc550>
+self = <torch._library.fake_impl.FakeImplHolder object at 0x74d4e1ba2a10>
+func = <function meta_nms at 0x74d4e1ca8dc0>
 source = '/home/kasinadhsarma/.local/lib/python3.10/site-packages/torchvision/_meta_registrations.py:164'
 
     def register(self, func: Callable, source: str) -> RegistrationHandle:
@@ -710,6 +225,28 @@ source = '/home/kasinadhsarma/.local/lib/python3.10/site-packages/torchvision/_m
 E       RuntimeError: operator torchvision::nms does not exist
 
 ../../.local/lib/python3.10/site-packages/torch/_library/fake_impl.py:31: RuntimeError
+
+During handling of the above exception, another exception occurred:
+
+self = <test_environment.EnvironmentTests testMethod=test_core_imports>
+
+    def test_core_imports(self):
+        """Test all core framework imports"""
+        try:
+            import torch
+            import torchvision
+            import torchaudio
+            _ = torch.__version__
+            _ = torchvision.__version__
+            _ = torchaudio.__version__
+            self.assertTrue(True, "All core imports successful")
+        except ImportError as e:
+            self.fail(f"Failed to import core frameworks: {str(e)}")
+        except RuntimeError as e:
+>           self.fail(f"Runtime error during import: {str(e)}")
+E           AssertionError: Runtime error during import: operator torchvision::nms does not exist
+
+tests/test_environment.py:28: AssertionError
 ___________________ EnvironmentTests.test_framework_versions ___________________
 
 self = <test_environment.EnvironmentTests testMethod=test_framework_versions>
@@ -719,7 +256,7 @@ self = <test_environment.EnvironmentTests testMethod=test_framework_versions>
         import torch
 >       import torchvision
 
-tests/test_environment.py:54: 
+tests/test_environment.py:56: 
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 ../../.local/lib/python3.10/site-packages/torchvision/__init__.py:10: in <module>
     from torchvision import _meta_registrations, datasets, io, models, ops, transforms, utils  # usort:skip
@@ -727,7 +264,7 @@ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     def meta_roi_align(input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio, aligned):
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-fn = <function meta_roi_align at 0x7b4a4adce8c0>
+fn = <function meta_roi_align at 0x74d4e1caaf80>
 
     def wrapper(fn):
 >       if torchvision.extension._has_ops():
@@ -751,12 +288,12 @@ self = <test_environment.EnvironmentTests testMethod=test_hardware_detection>
 >       self.assertTrue(cuda_available, "CUDA is not available")
 E       AssertionError: False is not true : CUDA is not available
 
-tests/test_environment.py:38: AssertionError
+tests/test_environment.py:40: AssertionError
 ----------------------------- Captured stdout call -----------------------------
 CUDA is not available
 _______________ TestAttentionMechanisms.test_scaled_dot_product ________________
 
-self = <test_attention.TestAttentionMechanisms object at 0x7b4a4ae20a90>
+self = <test_attention.TestAttentionMechanisms object at 0x74d4e1efc700>
 attention_module = ConsciousnessAttention(
   (query): Linear(in_features=128, out_features=128, bias=True)
   (key): Linear(in_features=12...res=128, bias=True)
@@ -776,7 +313,7 @@ tests/unit/test_base.py:42: in create_inputs
     torch.manual_seed(seed)  # Use seed value directly
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-seed = <bound method ConsciousnessTestBase.seed of <test_attention.TestAttentionMechanisms object at 0x7b4a4ae20a90>>
+seed = <bound method ConsciousnessTestBase.seed of <test_attention.TestAttentionMechanisms object at 0x74d4e1efc700>>
 
     def manual_seed(seed) -> torch._C.Generator:
         r"""Sets the seed for generating random numbers on all devices. Returns a
@@ -794,7 +331,7 @@ E       TypeError: int() argument must be a string, a bytes-like object or a rea
 ../../.local/lib/python3.10/site-packages/torch/random.py:42: TypeError
 _________________ TestAttentionMechanisms.test_attention_mask __________________
 
-self = <test_attention.TestAttentionMechanisms object at 0x7b4a4ae20ca0>
+self = <test_attention.TestAttentionMechanisms object at 0x74d4e1efc910>
 attention_module = ConsciousnessAttention(
   (query): Linear(in_features=128, out_features=128, bias=True)
   (key): Linear(in_features=12...res=128, bias=True)
@@ -814,7 +351,7 @@ tests/unit/test_base.py:42: in create_inputs
     torch.manual_seed(seed)  # Use seed value directly
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-seed = <bound method ConsciousnessTestBase.seed of <test_attention.TestAttentionMechanisms object at 0x7b4a4ae20ca0>>
+seed = <bound method ConsciousnessTestBase.seed of <test_attention.TestAttentionMechanisms object at 0x74d4e1efc910>>
 
     def manual_seed(seed) -> torch._C.Generator:
         r"""Sets the seed for generating random numbers on all devices. Returns a
@@ -832,7 +369,7 @@ E       TypeError: int() argument must be a string, a bytes-like object or a rea
 ../../.local/lib/python3.10/site-packages/torch/random.py:42: TypeError
 ___________ TestAttentionMechanisms.test_consciousness_broadcasting ____________
 
-self = <test_attention.TestAttentionMechanisms object at 0x7b4a4ae20eb0>
+self = <test_attention.TestAttentionMechanisms object at 0x74d4e1efcb20>
 attention_module = ConsciousnessAttention(
   (query): Linear(in_features=128, out_features=128, bias=True)
   (key): Linear(in_features=12...res=128, bias=True)
@@ -851,7 +388,7 @@ tests/unit/test_base.py:42: in create_inputs
     torch.manual_seed(seed)  # Use seed value directly
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-seed = <bound method ConsciousnessTestBase.seed of <test_attention.TestAttentionMechanisms object at 0x7b4a4ae20eb0>>
+seed = <bound method ConsciousnessTestBase.seed of <test_attention.TestAttentionMechanisms object at 0x74d4e1efcb20>>
 
     def manual_seed(seed) -> torch._C.Generator:
         r"""Sets the seed for generating random numbers on all devices. Returns a
@@ -869,7 +406,7 @@ E       TypeError: int() argument must be a string, a bytes-like object or a rea
 ../../.local/lib/python3.10/site-packages/torch/random.py:42: TypeError
 __________ TestAttentionMechanisms.test_global_workspace_integration ___________
 
-self = <test_attention.TestAttentionMechanisms object at 0x7b4a4ae21090>
+self = <test_attention.TestAttentionMechanisms object at 0x74d4e1efcd00>
 batch_size = 2, seq_length = 8, hidden_dim = 128, num_heads = 4
 
     def test_global_workspace_integration(self, batch_size, seq_length, hidden_dim, num_heads):
@@ -889,7 +426,7 @@ tests/unit/test_base.py:42: in create_inputs
     torch.manual_seed(seed)  # Use seed value directly
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
-seed = <bound method ConsciousnessTestBase.seed of <test_attention.TestAttentionMechanisms object at 0x7b4a4ae21090>>
+seed = <bound method ConsciousnessTestBase.seed of <test_attention.TestAttentionMechanisms object at 0x74d4e1efcd00>>
 
     def manual_seed(seed) -> torch._C.Generator:
         r"""Sets the seed for generating random numbers on all devices. Returns a
@@ -907,7 +444,7 @@ E       TypeError: int() argument must be a string, a bytes-like object or a rea
 ../../.local/lib/python3.10/site-packages/torch/random.py:42: TypeError
 __________ TestCognitiveProcessIntegration.test_cross_modal_attention __________
 
-self = <test_cognitive_integration.TestCognitiveProcessIntegration object at 0x7b4a4ae22c20>
+self = <test_cognitive_integration.TestCognitiveProcessIntegration object at 0x74d4e1efe860>
 device = device(type='cpu')
 integration_module = CognitiveProcessIntegration(
   (attention): MultiheadAttention(
@@ -966,7 +503,7 @@ E           TypeError: LayerNorm.__init__() missing 1 required positional argume
 models/consciousness_state.py:31: TypeError
 ______ TestCognitiveProcessIntegration.test_modality_specific_processing _______
 
-self = <test_cognitive_integration.TestCognitiveProcessIntegration object at 0x7b4a4ae22050>
+self = <test_cognitive_integration.TestCognitiveProcessIntegration object at 0x74d4e1efdc90>
 device = device(type='cpu')
 integration_module = CognitiveProcessIntegration(
   (attention): MultiheadAttention(
@@ -1020,7 +557,7 @@ E           TypeError: LayerNorm.__init__() missing 1 required positional argume
 models/consciousness_state.py:31: TypeError
 __________ TestCognitiveProcessIntegration.test_integration_stability __________
 
-self = <test_cognitive_integration.TestCognitiveProcessIntegration object at 0x7b4a4ae21a20>
+self = <test_cognitive_integration.TestCognitiveProcessIntegration object at 0x74d4e1efd660>
 device = device(type='cpu')
 integration_module = CognitiveProcessIntegration(
   (attention): MultiheadAttention(
@@ -1075,7 +612,7 @@ E           TypeError: LayerNorm.__init__() missing 1 required positional argume
 models/consciousness_state.py:31: TypeError
 __________ TestCognitiveProcessIntegration.test_cognitive_integration __________
 
-self = <test_cognitive_integration.TestCognitiveProcessIntegration object at 0x7b4a4ae20ac0>
+self = <test_cognitive_integration.TestCognitiveProcessIntegration object at 0x74d4e1efc7f0>
 device = device(type='cpu')
 integration_module = CognitiveProcessIntegration(
   (attention): MultiheadAttention(
@@ -1132,9 +669,241 @@ deterministic = True
 E           TypeError: LayerNorm.__init__() missing 1 required positional argument: 'normalized_shape'
 
 models/consciousness_state.py:31: TypeError
+_______________ TestConsciousnessStateManager.test_state_updates _______________
+
+self = <test_state_management.TestConsciousnessStateManager object at 0x74d4e1eff280>
+device = device(type='cpu'), state_manager = ConsciousnessStateManager()
+
+    def test_state_updates(self, device, state_manager):
+        # Test dimensions
+        batch_size = 2
+        hidden_dim = 64
+    
+        # Create sample state and inputs
+        state = torch.randn(batch_size, hidden_dim, device=device)
+        inputs = torch.randn(batch_size, hidden_dim, device=device)
+    
+        # Initialize parameters
+        state_manager.eval()
+        with torch.no_grad():
+            new_state, metrics = state_manager(state, inputs, threshold=0.5, deterministic=True)
+    
+        # Test output shapes
+        assert new_state.shape == state.shape
+        assert 'memory_gate' in metrics
+        assert 'energy_cost' in metrics
+        assert 'state_value' in metrics
+    
+        # Test memory gate properties
+>       assert metrics['memory_gate'].shape == (batch_size, hidden_dim)  # Updated shape
+E       assert torch.Size([2, 1]) == (2, 64)
+E         
+E         At index 1 diff: 1 != 64
+E         Use -v to get more diff
+
+tests/unit/integration/test_state_management.py:44: AssertionError
+----------------------------- Captured stdout call -----------------------------
+memory_gate: tensor([[0.4657],
+        [0.5080]])
+state: tensor([[-1.3830, -1.4503, -1.8523,  1.5543,  0.7169, -0.5660,  1.2047,  0.6064,
+          2.4917, -0.2379, -0.5402, -1.2173, -0.8302, -0.0149, -0.6758, -0.6141,
+         -0.1487,  1.9537, -0.2105, -1.4271, -0.6158, -1.3398, -0.0069, -0.1715,
+         -0.5670, -0.4308, -0.4233, -2.3178, -0.1384, -1.1886,  0.1009,  0.0200,
+          0.7741,  0.8302,  0.1800,  0.0131, -1.1728, -0.7405, -0.5688, -1.7329,
+          1.7581, -0.9426,  1.4846,  1.8746,  0.8086,  1.0405, -0.6775,  0.9629,
+          0.2739,  0.6613,  0.3005, -0.5702,  0.1045, -0.6495, -0.5848,  0.7814,
+         -0.0124,  1.2672,  0.3202, -0.4994, -0.2387, -0.6891,  0.1425, -0.9904],
+        [ 1.0055, -0.3669, -0.1946, -0.4449,  0.8112, -0.0239, -0.4611,  0.6905,
+         -2.1334, -0.8039,  2.5826,  0.4373, -0.6853,  1.8735, -0.4983, -0.7967,
+          0.3671, -0.3611, -0.4447,  0.6582,  0.1812,  1.2462,  1.0336, -0.9022,
+         -0.9556, -0.5635, -1.3092, -0.3412, -1.1429, -0.6851,  0.5860,  1.6440,
+          0.4365,  0.4282, -0.5223, -1.0323,  1.1668,  1.5545,  1.3651, -0.2119,
+          1.0643, -0.4303, -0.3554, -0.0811, -1.8799, -0.2709,  0.9479, -0.0344,
+          0.8825, -0.7963, -0.1274,  1.7884,  1.4648,  2.2908,  0.7431,  0.3915,
+         -0.5675, -1.0030, -0.0106, -0.6673,  0.5592,  1.2419,  1.8643,  1.1935]])
+inputs: tensor([[ 0.5735, -0.1483, -0.2319,  1.1960, -0.4282,  0.1324, -0.6036, -0.0424,
+         -0.6245,  1.1936,  1.0151,  0.1933, -2.2407,  1.3686,  0.2470, -0.5357,
+          1.2343,  0.6840,  0.6605, -0.5586, -0.2869, -1.0841, -0.1762,  1.8438,
+         -0.3306, -0.1151,  1.0079,  0.2821,  0.3033,  0.3987,  0.2760, -0.0568,
+          1.6998, -0.0737,  0.6899,  0.5232, -0.8354, -0.8408, -3.0869,  1.3713,
+          2.1598, -1.2853, -1.0123,  0.8712,  1.4654,  0.8098, -0.3557,  1.4343,
+          0.9254, -0.3240, -0.2193,  0.0078,  1.0323,  0.6698, -1.1607, -0.5325,
+         -0.1298, -2.5016, -1.4439, -0.0626, -1.1790, -0.9620, -1.0800, -0.2393],
+        [-1.0747, -0.5275, -0.3907,  0.1954, -0.5732,  0.0993,  1.6708, -0.6900,
+          0.1998, -1.4074, -0.4741, -1.4273, -0.6085, -0.4433,  0.7978, -0.3686,
+          0.0569,  1.8666,  0.7107, -0.9635, -0.0757, -1.8338, -0.2824, -2.1353,
+          0.3958, -0.9002, -0.0528, -0.3297, -0.2407, -0.9539, -0.2353, -0.4375,
+         -1.0652,  2.1980,  0.4424,  2.1575, -1.0424,  0.8011, -1.0083,  0.5962,
+          0.6507, -0.9030, -0.2622, -1.7842,  0.0363, -0.7881, -0.1889, -1.2449,
+         -1.2264, -0.3370,  0.8512,  1.4472, -0.3314, -0.2259,  0.7974,  1.4978,
+          0.5270, -1.7554, -0.8008,  0.2534,  2.6883, -0.8134,  2.0702, -0.1130]])
+candidate_state: tensor([[-1.0706e-01,  5.3298e-02,  4.0605e-02,  3.0775e-01, -1.9088e-02,
+         -1.6048e-01,  3.5643e-01,  9.3934e-01,  5.6449e-01, -3.5029e-02,
+          3.1427e-01, -3.5541e-02,  5.7630e-01, -4.6935e-02, -9.3311e-02,
+          6.7344e-01, -1.6950e-01, -2.5738e-03,  5.5097e-02, -1.5302e-01,
+         -1.4457e-01, -1.3134e-01,  1.1719e+00,  4.3050e-01,  2.3022e-01,
+         -2.8813e-02, -1.6807e-01, -1.3676e-01,  2.2121e-01,  2.1269e-01,
+          6.3970e-01,  2.0172e-01, -1.3260e-01,  3.9148e-01,  1.9678e-02,
+         -1.5893e-01,  7.2205e-01,  3.5182e-02,  5.7917e-01, -2.2574e-02,
+         -1.3620e-02,  9.6195e-01, -1.2800e-01,  1.0408e-01,  1.2561e-01,
+          5.0379e-02, -1.2508e-01, -1.1096e-01, -7.8608e-02, -1.6926e-01,
+         -1.5911e-01, -1.5676e-01,  5.6579e-01, -1.6643e-01, -1.6019e-01,
+          1.0594e-01, -3.7902e-02,  3.1556e-04,  7.6959e-01, -1.6542e-02,
+         -6.4955e-02, -1.6428e-01,  8.2631e-01, -1.5471e-01],
+        [-1.6800e-01, -4.5470e-02, -1.4197e-01,  3.3336e-01, -7.5096e-02,
+          1.1963e+00,  1.7605e-01, -1.6652e-01, -6.2093e-02, -2.8170e-02,
+          2.1297e-01,  1.4797e-01, -1.4765e-01, -8.0226e-02,  7.3747e-02,
+          9.3227e-02,  8.8209e-02, -1.4256e-01,  1.2638e-01,  1.9190e-01,
+         -9.7905e-02, -1.2226e-01,  9.1613e-01, -1.2820e-01, -1.5167e-01,
+         -8.8945e-02, -1.2798e-01, -1.5483e-01,  4.2404e-01, -5.1631e-02,
+          3.5767e-01, -1.6474e-01,  3.3847e-01, -1.6606e-01, -1.6670e-01,
+         -7.4496e-02,  2.9380e-02, -8.6482e-02,  3.8251e-01, -1.5861e-01,
+          5.5262e-01,  5.9915e-02,  2.3210e-01,  2.2554e-01,  1.0364e-02,
+         -9.1359e-02, -8.4434e-02,  5.8762e-01, -2.2107e-02, -7.6245e-02,
+          8.8358e-01,  4.2512e-01, -6.6585e-02, -1.2565e-01, -1.6554e-01,
+         -1.4960e-01,  5.6122e-02,  3.2942e-01,  8.0127e-02, -1.6808e-01,
+         -1.0752e-01, -1.3765e-02,  2.0825e-01, -1.9032e-02]])
+new_state: tensor([[-0.7012, -0.6469, -0.8409,  0.8882,  0.3236, -0.3493,  0.7515,  0.7843,
+          1.4619, -0.1295, -0.0836, -0.5859, -0.0787, -0.0320, -0.3646,  0.0738,
+         -0.1598,  0.9084, -0.0686, -0.7463, -0.3640, -0.6941,  0.6230,  0.1502,
+         -0.1410, -0.2160, -0.2869, -1.1524,  0.0538, -0.4399,  0.3888,  0.1171,
+          0.2896,  0.5958,  0.0943, -0.0788, -0.1603, -0.3260,  0.0446, -0.8190,
+          0.8114,  0.0750,  0.6229,  0.9286,  0.4437,  0.5115, -0.3823,  0.3891,
+          0.0856,  0.2175,  0.0549, -0.3493,  0.3510, -0.3914, -0.3579,  0.4205,
+         -0.0260,  0.5903,  0.5603, -0.2414, -0.1459, -0.4087,  0.5079, -0.5439],
+        [ 0.4282, -0.2087, -0.1687, -0.0620,  0.3751,  0.5764, -0.1476,  0.2689,
+         -1.1144, -0.4222,  1.4168,  0.2950, -0.4208,  0.9123, -0.2168, -0.3588,
+          0.2299, -0.2536, -0.1637,  0.4288,  0.0439,  0.5729,  0.9758, -0.5214,
+         -0.5601, -0.3300, -0.7281, -0.2495, -0.3720, -0.3735,  0.4737,  0.7541,
+          0.3883,  0.1358, -0.3473, -0.5611,  0.6072,  0.7472,  0.8817, -0.1857,
+          0.8126, -0.1891, -0.0663,  0.0697, -0.9499, -0.1826,  0.4400,  0.2716,
+          0.4374, -0.4420,  0.3700,  1.1177,  0.7114,  1.1020,  0.2960,  0.1253,
+         -0.2607, -0.3475,  0.0340, -0.4217,  0.2312,  0.6241,  1.0495,  0.5970]])
+______________ TestConsciousnessStateManager.test_rl_optimization ______________
+
+self = <test_state_management.TestConsciousnessStateManager object at 0x74d4e1eff430>
+device = device(type='cpu'), state_manager = ConsciousnessStateManager()
+
+    def test_rl_optimization(self, device, state_manager):
+        batch_size = 2
+        hidden_dim = 64
+    
+        state = torch.randn(batch_size, hidden_dim, device=device)
+        inputs = torch.randn(batch_size, hidden_dim, device=device)
+    
+        state_manager.eval()
+        with torch.no_grad():
+            new_state, metrics = state_manager(state, inputs, threshold=0.5, deterministic=True)
+    
+        # Test RL loss computation
+        reward = torch.ones(batch_size, 1, device=device)  # Mock reward
+        value_loss, td_error = state_manager.get_rl_loss(
+            state_value=metrics['state_value'],
+            reward=reward,
+            next_state_value=metrics['state_value']
+        )
+    
+        # Test loss properties
+        assert torch.is_tensor(value_loss)
+        assert value_loss.item() >= 0.0
+>       assert td_error.shape == (batch_size, 1)  # changed to match actual output
+E       assert torch.Size([2, 2, 1]) == (2, 1)
+E         
+E         At index 1 diff: 2 != 1
+E         Left contains one more item: 1
+E         Use -v to get more diff
+
+tests/unit/integration/test_state_management.py:77: AssertionError
+----------------------------- Captured stdout call -----------------------------
+memory_gate: tensor([[0.5357],
+        [0.4613]])
+state: tensor([[ 3.6911e-01, -1.8412e-03,  1.4699e-01, -1.7657e-01,  1.2646e+00,
+         -3.7014e-02, -1.0295e+00, -1.5618e-01, -7.3206e-01,  2.9104e-01,
+          7.2113e-01, -1.5336e-01, -9.6577e-03, -1.1756e-01,  3.9622e-01,
+         -1.3399e+00,  1.9677e+00,  4.4244e-01, -8.0135e-01,  1.7419e-01,
+          8.0537e-01, -2.2278e-01,  7.7474e-01, -1.9460e-01, -8.6974e-01,
+         -3.5643e-02,  1.0047e+00,  1.0106e+00,  9.3074e-01,  6.0790e-01,
+          7.8991e-01, -1.1764e+00, -8.8421e-01, -8.2159e-01,  5.8896e-01,
+         -3.7130e-01,  7.0522e-02, -1.0719e+00, -1.2164e+00,  9.6203e-01,
+          6.3349e-01, -6.0285e-01, -1.7631e-01,  9.2233e-01,  5.1799e-01,
+          1.5612e-01, -5.4758e-02,  8.6722e-01, -3.9065e-01,  6.3418e-01,
+         -1.7975e+00,  3.0095e-01,  1.4295e-01,  5.7880e-01, -1.6747e-01,
+          2.0141e+00,  1.5079e-01, -1.6951e+00, -1.0783e+00,  3.7336e-01,
+          3.7040e-01, -8.7432e-02,  8.2192e-01, -1.7552e+00],
+        [ 4.8451e-02,  1.3113e+00,  1.2562e+00, -2.4380e-02,  6.8010e-02,
+          4.1542e-01, -2.8631e-01, -1.8241e-01,  1.0661e+00, -1.4677e+00,
+          5.3350e-01,  2.8839e-01, -1.5183e+00, -9.9473e-02,  1.3078e+00,
+          4.9345e-01, -7.9035e-01, -9.8397e-01, -1.3644e-01, -9.0006e-01,
+         -4.1993e-01, -5.2016e-01, -3.8504e-01, -1.5320e+00,  4.9437e-01,
+          5.9220e-01, -4.1462e-01, -2.4861e-01,  1.2185e+00, -1.5099e+00,
+          2.3433e-02, -1.1270e+00,  1.9322e+00,  4.8484e-01,  1.4557e-01,
+         -7.3704e-01, -1.8227e-01, -6.2906e-01, -1.1212e+00,  6.2512e-01,
+         -1.2712e-01,  4.4678e-01, -5.8975e-01, -7.5787e-02,  6.1199e-01,
+         -1.0575e+00, -1.1743e+00,  9.9564e-01,  7.9370e-01,  5.2235e-02,
+          4.3481e-01,  3.8716e-01, -1.9810e+00, -1.2002e+00,  1.5487e+00,
+          1.2570e-01, -9.3917e-01,  4.5987e-01,  5.4651e-01,  1.0698e+00,
+          1.7452e+00,  1.2179e+00,  6.3043e-02,  6.1842e-01]])
+inputs: tensor([[-0.2060, -0.4903,  0.5724, -1.2396,  0.7279, -2.0026, -0.2494,  0.4112,
+         -2.2560, -0.2143, -2.0242, -0.4152, -1.0785,  1.2142,  0.0241,  0.2971,
+         -0.6318, -1.5536,  0.1989,  1.5715, -0.6290, -1.0957,  0.4006,  0.0246,
+         -1.3953,  0.2746,  0.0398, -0.0134,  1.3806, -0.3006,  0.1140,  0.9557,
+          2.1349,  0.8713,  1.3440, -0.8591, -0.8528, -0.4494,  0.8941,  0.8698,
+          0.3727, -1.5515, -1.4584, -0.5517, -1.5602, -1.3332, -0.2026, -0.5787,
+         -0.5219, -1.7372, -0.0728, -0.5127, -0.4169, -0.9109,  0.0543,  0.2248,
+          0.8943, -0.1340,  1.0695,  1.4636, -0.1108, -0.6941, -0.3510,  0.6936],
+        [-0.1238, -1.9233,  1.4517, -1.0276, -1.5326,  1.3998,  0.4279,  0.3589,
+          0.4269,  0.1325,  0.8956,  1.2430, -1.7281, -0.3107, -0.0561, -0.8095,
+          0.1669,  0.6086,  2.0730,  2.2649,  2.2754, -0.5778, -1.3718,  0.3889,
+          1.2318, -1.4921,  0.7571,  0.8565, -0.9389, -1.9040, -1.1099,  0.2932,
+         -1.4101, -1.6628,  1.1714, -0.6268,  0.6320, -0.2776,  2.2390, -1.3801,
+          0.1991,  0.8598, -0.3836,  0.4461, -0.0673,  0.3683,  0.1595, -0.3828,
+         -0.3933, -0.4357, -0.9459, -0.0647,  2.0562, -0.6657,  0.4050,  0.8658,
+         -0.6201,  0.0813, -1.2535,  0.0316, -1.4369, -0.9236,  0.2465, -0.5628]])
+candidate_state: tensor([[ 0.9670, -0.1303,  0.0659, -0.1042, -0.1614,  0.0791, -0.1453,  0.0102,
+         -0.1692, -0.0280,  0.0541, -0.1588, -0.1597,  0.2567, -0.0889,  0.4080,
+         -0.0302, -0.0682,  0.0262, -0.1696,  0.1564, -0.1653,  0.4396,  0.2794,
+         -0.0038,  0.9700,  0.0871, -0.1633,  0.1437,  0.0152, -0.1022, -0.1699,
+          0.0467, -0.0650, -0.0979, -0.1093,  0.1487,  1.0216, -0.0191,  0.5354,
+         -0.0729, -0.1277,  0.2034,  0.0404,  0.8234,  0.8098, -0.1538, -0.1680,
+         -0.1450, -0.1135,  0.0813, -0.1592, -0.1577, -0.1548,  0.0135,  0.0098,
+         -0.0929, -0.1694,  0.9560, -0.0535,  0.4352, -0.1038, -0.1584, -0.1697],
+        [ 0.3970,  1.2602, -0.1214,  0.1959,  0.1826, -0.1073, -0.0697, -0.1698,
+          0.9607,  0.6368,  0.0760, -0.1244,  0.1543, -0.0880, -0.1296, -0.0310,
+         -0.1684,  0.6546, -0.0910,  0.0898, -0.1342, -0.1665, -0.1672, -0.0628,
+         -0.1404,  0.4228, -0.0648,  0.7308,  1.3705,  0.1265,  0.6072, -0.1177,
+         -0.1698, -0.1117, -0.0281, -0.1654,  0.0935,  0.0288, -0.1638,  0.6862,
+          0.4368, -0.0658, -0.1681,  0.2961,  1.1920,  1.5827,  0.0327,  0.1469,
+         -0.0888, -0.0492, -0.1338, -0.0771, -0.0745,  0.3443, -0.1459, -0.0202,
+         -0.1361,  0.1076,  0.1426,  0.0654, -0.1646, -0.0165,  0.1554,  1.1255]])
+new_state: tensor([[ 6.4672e-01, -6.1493e-02,  1.0933e-01, -1.4298e-01,  6.0252e-01,
+          1.6882e-02, -6.1896e-01, -7.8912e-02, -4.7072e-01,  1.4292e-01,
+          4.1142e-01, -1.5587e-01, -7.9328e-02,  5.6200e-02,  1.7098e-01,
+         -5.2838e-01,  1.0401e+00,  2.0535e-01, -4.1712e-01,  1.4556e-02,
+          5.0406e-01, -1.9608e-01,  6.1913e-01,  2.5473e-02, -4.6769e-01,
+          4.3128e-01,  5.7867e-01,  4.6556e-01,  5.6534e-01,  3.3270e-01,
+          3.7572e-01, -7.0913e-01, -4.5202e-01, -4.7030e-01,  2.7007e-01,
+         -2.4967e-01,  1.0683e-01, -9.9958e-02, -6.6051e-01,  7.6395e-01,
+          3.0550e-01, -3.8223e-01, -2.5742e-05,  5.1288e-01,  6.5979e-01,
+          4.5961e-01, -1.0074e-01,  3.8660e-01, -2.7659e-01,  2.8703e-01,
+         -9.2521e-01,  8.7305e-02,  3.3524e-03,  2.3820e-01, -8.3453e-02,
+          1.0835e+00,  3.7631e-02, -9.8671e-01, -1.3383e-01,  1.7517e-01,
+          4.0049e-01, -9.5021e-02,  3.6677e-01, -1.0191e+00],
+        [ 2.3618e-01,  1.2838e+00,  5.1412e-01,  9.4269e-02,  1.2974e-01,
+          1.3382e-01, -1.6964e-01, -1.7563e-01,  1.0094e+00, -3.3404e-01,
+          2.8704e-01,  6.6018e-02, -6.1732e-01, -9.3274e-02,  5.3348e-01,
+          2.1095e-01, -4.5531e-01, -1.0128e-01, -1.1195e-01, -3.6686e-01,
+         -2.6603e-01, -3.2967e-01, -2.6769e-01, -7.4055e-01,  1.5245e-01,
+          5.0097e-01, -2.2618e-01,  2.7900e-01,  1.3004e+00, -6.2842e-01,
+          3.3789e-01, -5.8329e-01,  7.9990e-01,  1.6351e-01,  5.1993e-02,
+         -4.2909e-01, -3.3731e-02, -2.7467e-01, -6.0546e-01,  6.5802e-01,
+          1.7666e-01,  1.7065e-01, -3.6259e-01,  1.2453e-01,  9.2444e-01,
+          3.6472e-01, -5.2412e-01,  5.3846e-01,  3.1829e-01, -2.3886e-03,
+          1.2850e-01,  1.3707e-01, -9.5401e-01, -3.6821e-01,  6.3580e-01,
+          4.7126e-02, -5.0659e-01,  2.7011e-01,  3.2895e-01,  5.2875e-01,
+          7.1642e-01,  5.5294e-01,  1.1277e-01,  8.9158e-01]])
 ______________ TestConsciousnessStateManager.test_adaptive_gating ______________
 
-self = <test_state_management.TestConsciousnessStateManager object at 0x7b4a4ae239a0>
+self = <test_state_management.TestConsciousnessStateManager object at 0x74d4e1eff5e0>
 device = device(type='cpu'), state_manager = ConsciousnessStateManager()
 
     def test_adaptive_gating(self, device, state_manager):
@@ -1157,10 +926,10 @@ device = device(type='cpu'), state_manager = ConsciousnessStateManager()
         # Memory gate should be more open (lower values) for different inputs
 >       assert torch.mean(metrics1['memory_gate']) > torch.mean(metrics2['memory_gate'])
 E       assert tensor(0.4373) > tensor(0.5014)
-E        +  where tensor(0.4373) = <built-in method mean of type object at 0x7b4a828678c0>(tensor([[0.4466],\n        [0.4281]]))
-E        +    where <built-in method mean of type object at 0x7b4a828678c0> = torch.mean
-E        +  and   tensor(0.5014) = <built-in method mean of type object at 0x7b4a828678c0>(tensor([[0.4656],\n        [0.5372]]))
-E        +    where <built-in method mean of type object at 0x7b4a828678c0> = torch.mean
+E        +  where tensor(0.4373) = <built-in method mean of type object at 0x74d5198678c0>(tensor([[0.4466],\n        [0.4281]]))
+E        +    where <built-in method mean of type object at 0x74d5198678c0> = torch.mean
+E        +  and   tensor(0.5014) = <built-in method mean of type object at 0x74d5198678c0>(tensor([[0.4656],\n        [0.5372]]))
+E        +    where <built-in method mean of type object at 0x74d5198678c0> = torch.mean
 
 tests/unit/integration/test_state_management.py:97: AssertionError
 ----------------------------- Captured stdout call -----------------------------
@@ -1308,7 +1077,7 @@ new_state: tensor([[-0.0791, -0.0393, -0.1964,  0.8758, -0.6890, -0.1955,  0.101
           0.2100,  0.8663,  0.8632,  0.2735,  0.1221, -0.7005, -0.7213,  0.2432]])
 ____________ TestInformationIntegration.test_phi_metric_computation ____________
 
-self = <test_integration.TestInformationIntegration object at 0x7b4a4aeac7c0>
+self = <test_integration.TestInformationIntegration object at 0x74d4e1d90400>
 device = device(type='cpu')
 integration_module = InformationIntegration(
   (input_projection): Linear(in_features=64, out_features=64, bias=True)
@@ -1358,7 +1127,7 @@ E       RuntimeError: mat1 and mat2 shapes cannot be multiplied (8x32 and 64x64)
 ../../.local/lib/python3.10/site-packages/torch/nn/modules/linear.py:125: RuntimeError
 _______________ TestInformationIntegration.test_information_flow _______________
 
-self = <test_integration.TestInformationIntegration object at 0x7b4a4aeac970>
+self = <test_integration.TestInformationIntegration object at 0x74d4e1d905b0>
 device = device(type='cpu')
 integration_module = InformationIntegration(
   (input_projection): Linear(in_features=64, out_features=64, bias=True)
@@ -1404,7 +1173,7 @@ E       RuntimeError: mat1 and mat2 shapes cannot be multiplied (8x32 and 64x64)
 ../../.local/lib/python3.10/site-packages/torch/nn/modules/linear.py:125: RuntimeError
 _____________ TestInformationIntegration.test_entropy_calculations _____________
 
-self = <test_integration.TestInformationIntegration object at 0x7b4a4aeacb20>
+self = <test_integration.TestInformationIntegration object at 0x74d4e1d90760>
 device = device(type='cpu')
 integration_module = InformationIntegration(
   (input_projection): Linear(in_features=64, out_features=64, bias=True)
@@ -1451,7 +1220,7 @@ E       RuntimeError: mat1 and mat2 shapes cannot be multiplied (8x32 and 64x64)
 ../../.local/lib/python3.10/site-packages/torch/nn/modules/linear.py:125: RuntimeError
 ______________ TestInformationIntegration.test_memory_integration ______________
 
-self = <test_integration.TestInformationIntegration object at 0x7b4a4aeaccd0>
+self = <test_integration.TestInformationIntegration object at 0x74d4e1d90910>
 device = device(type='cpu')
 integration_module = InformationIntegration(
   (input_projection): Linear(in_features=64, out_features=64, bias=True)
@@ -1496,9 +1265,159 @@ input = tensor([[[ 1.1594, -0.4872, -0.8200,  1.6364,  0.8068, -1.3143, -1.2821,
 E       RuntimeError: mat1 and mat2 shapes cannot be multiplied (8x32 and 64x64)
 
 ../../.local/lib/python3.10/site-packages/torch/nn/modules/linear.py:125: RuntimeError
+_____________ TestMemoryComponents.test_memory_sequence_processing _____________
+
+self = <test_memory.TestMemoryComponents object at 0x74d4e1d918a0>
+working_memory = WorkingMemory(
+  (lstm): LSTMCell(64, 64)
+  (dropout): Dropout(p=0.1, inplace=False)
+)
+device = device(type='cpu'), batch_size = 2, seq_length = 8, hidden_dim = 64
+
+    def test_memory_sequence_processing(self, working_memory, device, batch_size, seq_length, hidden_dim):
+        """Test working memory sequence processing."""
+        # Test with different sequence lengths
+        for test_length in [4, 8, 16]:
+>           inputs = self.create_inputs(self.seed, batch_size, test_length, hidden_dim).to(device)
+
+tests/unit/memory/test_memory.py:72: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/test_base.py:42: in create_inputs
+    torch.manual_seed(seed)  # Use seed value directly
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+seed = <bound method ConsciousnessTestBase.seed of <test_memory.TestMemoryComponents object at 0x74d4e1d918a0>>
+
+    def manual_seed(seed) -> torch._C.Generator:
+        r"""Sets the seed for generating random numbers on all devices. Returns a
+        `torch.Generator` object.
+    
+        Args:
+            seed (int): The desired seed. Value must be within the inclusive range
+                `[-0x8000_0000_0000_0000, 0xffff_ffff_ffff_ffff]`. Otherwise, a RuntimeError
+                is raised. Negative inputs are remapped to positive values with the formula
+                `0xffff_ffff_ffff_ffff + seed`.
+        """
+>       seed = int(seed)
+E       TypeError: int() argument must be a string, a bytes-like object or a real number, not 'method'
+
+../../.local/lib/python3.10/site-packages/torch/random.py:42: TypeError
+________________ TestMemoryComponents.test_context_aware_gating ________________
+
+self = <test_memory.TestMemoryComponents object at 0x74d4e1d91a80>
+working_memory = WorkingMemory(
+  (lstm): LSTMCell(64, 64)
+  (dropout): Dropout(p=0.1, inplace=False)
+)
+device = device(type='cpu'), batch_size = 2, seq_length = 8, hidden_dim = 64
+
+    def test_context_aware_gating(self, working_memory, device, batch_size, seq_length, hidden_dim):
+        """Test context-aware gating mechanisms."""
+        # Create two different input sequences with controlled differences
+>       base_inputs = self.create_inputs(self.seed, batch_size, seq_length, hidden_dim).to(device)
+
+tests/unit/memory/test_memory.py:83: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/test_base.py:42: in create_inputs
+    torch.manual_seed(seed)  # Use seed value directly
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+seed = <bound method ConsciousnessTestBase.seed of <test_memory.TestMemoryComponents object at 0x74d4e1d91a80>>
+
+    def manual_seed(seed) -> torch._C.Generator:
+        r"""Sets the seed for generating random numbers on all devices. Returns a
+        `torch.Generator` object.
+    
+        Args:
+            seed (int): The desired seed. Value must be within the inclusive range
+                `[-0x8000_0000_0000_0000, 0xffff_ffff_ffff_ffff]`. Otherwise, a RuntimeError
+                is raised. Negative inputs are remapped to positive values with the formula
+                `0xffff_ffff_ffff_ffff + seed`.
+        """
+>       seed = int(seed)
+E       TypeError: int() argument must be a string, a bytes-like object or a real number, not 'method'
+
+../../.local/lib/python3.10/site-packages/torch/random.py:42: TypeError
+__________________ TestMemoryComponents.test_memory_retention __________________
+
+self = <test_memory.TestMemoryComponents object at 0x74d4e1d91e40>
+working_memory = WorkingMemory(
+  (lstm): LSTMCell(64, 64)
+  (dropout): Dropout(p=0.1, inplace=False)
+)
+device = device(type='cpu'), batch_size = 2, seq_length = 8, hidden_dim = 64
+
+    def test_memory_retention(self, working_memory, device, batch_size, seq_length, hidden_dim):
+        """Test memory retention over sequences."""
+        # Create a sequence with a distinctive pattern
+        pattern = torch.ones(batch_size, 1, hidden_dim, device=device)
+        inputs = torch.cat([
+            pattern,
+>           self.create_inputs(self.seed, batch_size, seq_length-2, hidden_dim).to(device),
+            pattern
+        ], dim=1)
+
+tests/unit/memory/test_memory.py:127: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/unit/test_base.py:42: in create_inputs
+    torch.manual_seed(seed)  # Use seed value directly
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+seed = <bound method ConsciousnessTestBase.seed of <test_memory.TestMemoryComponents object at 0x74d4e1d91e40>>
+
+    def manual_seed(seed) -> torch._C.Generator:
+        r"""Sets the seed for generating random numbers on all devices. Returns a
+        `torch.Generator` object.
+    
+        Args:
+            seed (int): The desired seed. Value must be within the inclusive range
+                `[-0x8000_0000_0000_0000, 0xffff_ffff_ffff_ffff]`. Otherwise, a RuntimeError
+                is raised. Negative inputs are remapped to positive values with the formula
+                `0xffff_ffff_ffff_ffff + seed`.
+        """
+>       seed = int(seed)
+E       TypeError: int() argument must be a string, a bytes-like object or a real number, not 'method'
+
+../../.local/lib/python3.10/site-packages/torch/random.py:42: TypeError
+___________________ TestMemoryComponents.test_working_memory ___________________
+
+self = <test_memory.TestMemoryComponents object at 0x74d4e1d92020>
+working_memory = WorkingMemory(
+  (lstm): LSTMCell(64, 64)
+  (dropout): Dropout(p=0.1, inplace=False)
+)
+device = device(type='cpu'), batch_size = 2, seq_length = 8, hidden_dim = 64
+
+    def test_working_memory(self, working_memory, device, batch_size, seq_length, hidden_dim):
+        """Test WorkingMemory component."""
+        inputs = torch.randn(batch_size, seq_length, hidden_dim, device=device)
+        initial_state = torch.zeros(batch_size, hidden_dim, device=device)
+    
+        output, final_state = working_memory(inputs, initial_state, deterministic=True)
+    
+        # Verify shapes
+        self.assert_output_shape(output, (batch_size, seq_length, hidden_dim))
+>       self.assert_output_shape(final_state, (batch_size, hidden_dim))
+
+tests/unit/memory/test_memory.py:147: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <test_memory.TestMemoryComponents object at 0x74d4e1d92020>
+output = (tensor([[ 0.0098, -0.2070,  0.0819, -0.1142,  0.0330, -0.2198, -0.0295,  0.2070,
+         -0.1438, -0.0873,  0.4372, ...500,
+         -0.4479,  0.3391,  0.1905, -0.3798,  0.0564,  0.2251,  0.4181, -0.4739]],
+       grad_fn=<AddBackward0>))
+expected_shape = (2, 64)
+
+    def assert_output_shape(self, output, expected_shape):
+        """Assert output has expected shape."""
+>       assert output.shape == expected_shape, f"Expected shape {expected_shape}, got {output.shape}"
+E       AttributeError: 'tuple' object has no attribute 'shape'
+
+tests/unit/test_base.py:47: AttributeError
 ______________________ TestGRUCell.test_gru_state_updates ______________________
 
-self = <test_memory_components.TestGRUCell object at 0x7b4a4aeaead0>
+self = <test_memory_components.TestGRUCell object at 0x74d4e1d92a40>
 gru_cell = GRUCell(
   (update): Linear(in_features=128, out_features=64, bias=True)
   (reset): Linear(in_features=128, out_features=64, bias=True)
@@ -1549,7 +1468,7 @@ E       AttributeError: 'GRUCell' object has no attribute 'reset_parameters'. Di
 ../../.local/lib/python3.10/site-packages/torch/nn/modules/module.py:1931: AttributeError
 _______________________ TestGRUCell.test_gru_reset_gate ________________________
 
-self = <test_memory_components.TestGRUCell object at 0x7b4a4aeaec80>
+self = <test_memory_components.TestGRUCell object at 0x74d4e1d92bf0>
 gru_cell = GRUCell(
   (update): Linear(in_features=128, out_features=64, bias=True)
   (reset): Linear(in_features=128, out_features=64, bias=True)
@@ -1597,7 +1516,7 @@ E       AttributeError: 'GRUCell' object has no attribute 'reset_parameters'. Di
 ../../.local/lib/python3.10/site-packages/torch/nn/modules/module.py:1931: AttributeError
 __________________ TestWorkingMemory.test_sequence_processing __________________
 
-self = <test_memory_components.TestWorkingMemory object at 0x7b4a4aeaef80>
+self = <test_memory_components.TestWorkingMemory object at 0x74d4e1d92ef0>
 memory_module = WorkingMemory(
   (lstm): LSTMCell(64, 64)
   (dropout): Dropout(p=0.1, inplace=False)
@@ -1645,7 +1564,7 @@ E       AttributeError: 'WorkingMemory' object has no attribute 'reset_parameter
 ../../.local/lib/python3.10/site-packages/torch/nn/modules/module.py:1931: AttributeError
 ___________________ TestWorkingMemory.test_memory_retention ____________________
 
-self = <test_memory_components.TestWorkingMemory object at 0x7b4a4aeaf130>
+self = <test_memory_components.TestWorkingMemory object at 0x74d4e1d930a0>
 memory_module = WorkingMemory(
   (lstm): LSTMCell(64, 64)
   (dropout): Dropout(p=0.1, inplace=False)
@@ -1678,11 +1597,11 @@ models/memory.py:83: in forward
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
 
 self = LSTMCell(64, 64)
-input = tensor([[ 0.8228,  0.4778, -0.2195,  1.2569,  0.2110, -1.1205,  0.0466,  1.2571,
-         -0.8726, -0.0091, -0.1483, -...  1.1979,  0.3885,  0.0584,  1.6941,
-          0.9218,  1.1737,  1.9621, -1.1779, -1.0148, -0.1602, -0.2617,  0.2438]])
-hx = (tensor([[-0.8408,  0.3559,  0.0365,  0.6261, -0.9948,  0.4083, -0.2302, -0.6006,
-         -1.4249, -0.4872, -0.4891, ...0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+input = tensor([[-0.9802, -2.5509,  1.0513, -0.9286, -0.1738, -2.1272,  0.0070, -1.0037,
+          0.5632, -0.5390, -0.3301,  ...  1.1889,  0.8048, -1.6138,  1.3717,
+          0.5917, -0.6198,  0.6973,  1.1738,  1.3272,  0.9345,  0.1625,  0.0501]])
+hx = (tensor([[ 2.5769,  0.0093, -0.2642, -0.2135, -0.3166, -0.5919, -1.4534, -1.9073,
+          1.5983,  0.5750,  0.9150, ...0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
          0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.]]))
 
     def forward(
@@ -1723,7 +1642,7 @@ E       RuntimeError: input has inconsistent input_size: got 32 expected 64
 ../../.local/lib/python3.10/site-packages/torch/nn/modules/rnn.py:1705: RuntimeError
 _______________ TestConsciousnessStateManager.test_state_updates _______________
 
-self = <test_consciousness_state_management.TestConsciousnessStateManager object at 0x7b4a4aeadf90>
+self = <test_consciousness_state_management.TestConsciousnessStateManager object at 0x74d4e1d93640>
 device = device(type='cpu'), state_manager = ConsciousnessStateManager()
 
     def test_state_updates(self, device, state_manager):
@@ -1755,75 +1674,105 @@ E         Use -v to get more diff
 
 tests/unit/state/test_consciousness_state_management.py:44: AssertionError
 ----------------------------- Captured stdout call -----------------------------
-memory_gate: tensor([[0.5412],
-        [0.5170]])
-state: tensor([[ 0.8820, -0.7512,  0.6737, -2.2565, -1.7772, -0.1782, -0.4873, -0.1511,
-         -2.2662,  1.1800,  0.9239, -0.1837, -1.5239,  0.2382,  1.2670,  0.1802,
-         -2.4874, -0.6499, -0.8651, -0.9638, -0.5067,  0.1546,  0.3963, -0.7894,
-         -0.1478, -0.0920, -0.9379, -0.0855, -0.2504,  1.9650, -0.2188,  0.6699,
-          1.0218,  1.2517,  1.1306, -0.1146, -1.0109,  0.6345, -0.6379, -0.6539,
-          2.1770,  0.3034, -0.2830,  0.3491, -0.0464,  1.1567, -0.2502,  0.4240,
-         -0.4437,  0.2839,  0.0499, -1.9377, -0.3953,  0.2102,  2.4607,  0.1184,
-          2.4748,  0.3154, -0.2272,  0.8170,  0.5415,  0.4056,  0.8086, -0.4328],
-        [ 0.9448, -0.7397, -0.8774,  0.8758,  1.2169, -0.5378,  1.8439, -0.9371,
-         -0.9611,  0.3984, -1.5090, -0.6318,  1.3794,  0.0817, -0.7661,  0.6600,
-         -0.7496, -0.6153,  1.2564, -0.4554,  2.0231, -0.5384, -0.6119,  0.2901,
-         -0.5602,  0.5989,  1.1150,  1.3037,  2.5314,  0.3666,  0.0834, -1.7847,
-         -0.4952, -0.4795,  0.4190, -1.9200, -0.8524, -0.4395,  0.6200,  0.0522,
-          0.1855, -0.6626, -0.1577,  1.2307,  2.3511,  0.0249,  0.9703, -2.7720,
-          0.9532, -0.1512, -0.5343,  0.5091, -0.2342, -1.1259, -1.5034,  0.7678,
-         -0.7191, -0.7906,  0.7700, -1.2683, -0.0233, -1.0126, -0.8398,  1.0070]])
-inputs: tensor([[ 0.1948, -1.3239,  1.6676, -0.3421, -1.3011,  0.7207,  1.1146, -1.0774,
-         -1.5337,  0.9098,  0.2896,  0.5194, -2.3901, -0.0425,  0.9515,  1.1472,
-         -0.9730,  0.2578,  0.5923,  1.5675,  0.2541,  0.7129,  0.0370,  0.7166,
-          0.7626,  0.5782,  0.5814, -0.5973, -1.1850,  0.1958,  1.6039, -0.6257,
-         -0.3211,  0.7313, -0.7422, -0.0868,  0.6487, -0.0277, -1.0139,  1.3784,
-         -0.4017, -1.1731, -0.5788,  0.3226, -0.9097,  0.4519, -0.1791,  0.4229,
-         -2.2706, -0.7889, -1.8209, -2.6179, -0.4474, -0.2763, -0.9779, -0.4729,
-          0.8560, -1.2766, -1.1726,  0.0630,  0.2604, -0.6412, -0.2963,  0.1510],
-        [-0.5808, -0.0987, -0.9359, -1.1939,  0.9917, -0.0835, -0.2132, -0.5334,
-          0.0243, -0.9013,  0.9665, -0.4049,  0.2158,  0.9369,  0.1134,  2.1238,
-         -0.3237,  0.0566,  0.2899, -1.7032, -0.9657, -0.7004,  0.2255, -1.5247,
-          1.7609,  0.1356,  1.5309, -0.5397,  0.8107, -0.4656, -1.1226,  0.0047,
-         -1.5309, -1.0939,  0.3569, -0.5346,  0.2778,  0.5504,  0.2426,  2.5595,
-          0.6370,  1.3665, -1.9968,  0.1720, -0.5796, -0.0052,  0.9699, -0.3565,
-          0.4616, -0.1758,  0.8227, -0.3531,  1.0586, -0.3473,  1.3160,  2.0770,
-         -0.1590,  1.0057, -0.1636,  0.5453, -0.7962, -0.8051,  0.5816, -0.3534]])
-candidate_state: tensor([[-0.1553, -0.1621, -0.0797, -0.0539,  0.2687,  0.2451,  0.0051, -0.0501,
-         -0.1277,  0.1359, -0.1640,  0.0685,  0.7885, -0.0224, -0.1700, -0.1061,
-         -0.1680,  0.0059,  0.4551,  0.3507,  0.0274,  0.3834, -0.1424, -0.1540,
-          0.4526,  0.3002,  0.5560, -0.1317,  0.3783, -0.1557, -0.1429,  0.6180,
-          0.3798,  0.3071,  0.0159, -0.1700,  0.9002, -0.0872, -0.1337, -0.1370,
-          0.3476,  0.4501, -0.1171, -0.1495, -0.1360,  1.8006, -0.0858,  0.9336,
-          0.4015,  0.1339,  0.4185, -0.0818, -0.0100,  0.3985,  0.5455, -0.1064,
-         -0.1371, -0.1163,  0.2909, -0.1539, -0.1277, -0.0871,  0.0127, -0.0367],
-        [ 0.3312, -0.1583,  0.0951, -0.1055,  0.1239, -0.1615, -0.1664, -0.1275,
-          1.3537,  0.0798, -0.0885,  0.1018,  0.3026, -0.1688, -0.1694, -0.1622,
-          0.0789,  0.0026, -0.0543,  0.2084,  0.5630, -0.1613,  0.1892, -0.0073,
-         -0.1699, -0.0704, -0.1593, -0.0923,  0.1002, -0.0640,  0.3762, -0.1675,
-         -0.1283, -0.1254,  0.0297,  0.0714, -0.1592,  0.0142, -0.0952,  0.0558,
-          0.1797,  0.3788, -0.1494,  0.3453, -0.1096, -0.1472, -0.1692,  0.1846,
-          0.3279,  0.0324, -0.1556,  0.0965,  0.1407,  0.3393,  0.0306, -0.0868,
-          0.5760, -0.1447, -0.1609,  0.3956, -0.1699, -0.1675, -0.1694, -0.1338]])
-new_state: tensor([[ 0.4061, -0.4810,  0.3280, -1.2459, -0.8385,  0.0161, -0.2614, -0.1048,
-         -1.2850,  0.7010,  0.4248, -0.0680, -0.4629,  0.1186,  0.6077,  0.0489,
-         -1.4232, -0.3490, -0.2594, -0.3607, -0.2617,  0.2596,  0.1491, -0.4979,
-          0.1277,  0.0879, -0.2525, -0.1067,  0.0381,  0.9920, -0.1840,  0.6461,
-          0.7272,  0.8183,  0.6192, -0.1400, -0.1341,  0.3034, -0.4066, -0.4168,
-          1.3377,  0.3707, -0.2069,  0.1203, -0.0875,  1.4521, -0.1747,  0.6578,
-         -0.0559,  0.2151,  0.2190, -1.0862, -0.2185,  0.2966,  1.5820,  0.0153,
-          1.2765,  0.1173,  0.0105,  0.3715,  0.2344,  0.1795,  0.4434, -0.2511],
-        [ 0.6484, -0.4589, -0.4077,  0.4018,  0.6890, -0.3560,  0.8730, -0.5461,
-          0.1569,  0.2445, -0.8229, -0.2775,  0.8593, -0.0393, -0.4779,  0.2629,
-         -0.3494, -0.3169,  0.6234, -0.1348,  1.3179, -0.3563, -0.2250,  0.1465,
-         -0.3717,  0.2757,  0.4996,  0.6295,  1.3572,  0.1586,  0.2248, -1.0036,
-         -0.3180, -0.3085,  0.2310, -0.9582, -0.5176, -0.2204,  0.2746,  0.0539,
-          0.1827, -0.1597, -0.1537,  0.8031,  1.1626, -0.0582,  0.4200, -1.3441,
-          0.6512, -0.0625, -0.3514,  0.3098, -0.0532, -0.4182, -0.7625,  0.3550,
-         -0.0936, -0.4786,  0.3204, -0.4647, -0.0941, -0.6045, -0.5160,  0.4560]])
+memory_gate: tensor([[0.5637],
+        [0.5205]])
+state: tensor([[ 6.5665e-01, -1.5228e-01, -2.0093e-01, -9.3677e-01, -2.4498e-01,
+         -1.4227e-01,  3.4789e-01, -1.0471e+00,  1.2661e+00,  2.1532e+00,
+          1.2944e+00,  3.0895e-01,  4.3496e-01, -4.5348e-01, -3.8704e-01,
+         -9.6354e-01,  4.9757e-01,  1.0891e-01, -1.1301e+00,  2.0946e+00,
+         -1.4446e+00,  1.6232e-01, -7.1584e-01, -9.4224e-01,  3.5863e-01,
+          1.2962e-01, -1.1760e+00, -1.4091e+00, -9.5867e-02,  2.0788e-01,
+         -9.0591e-01, -1.6123e+00,  7.6874e-02, -4.4603e-01, -1.3883e+00,
+          7.2259e-01, -3.1743e-01,  3.7810e-01,  2.1524e-01,  8.3736e-02,
+         -9.7122e-01,  1.1406e+00,  3.2447e-01,  2.1624e+00,  1.2865e-01,
+          4.8753e-01,  3.3932e-01, -7.5564e-01, -2.7567e+00, -1.4047e+00,
+         -1.5775e+00,  1.0474e+00, -5.2101e-01,  2.8735e-01,  4.2427e-01,
+          5.5305e-01, -2.0090e-01, -9.8143e-01, -1.3084e+00, -1.4602e+00,
+         -2.2155e-01,  1.5302e+00, -1.7005e-01,  3.2771e-01],
+        [-4.0162e-01,  4.3458e-01, -1.5100e+00, -1.0083e+00,  5.1561e-01,
+          1.4309e-01, -1.3317e+00, -1.2274e-01, -3.7759e-01,  1.2223e+00,
+         -2.0404e-01,  9.5041e-01,  7.6808e-01, -1.7640e+00,  4.4184e-01,
+         -5.9860e-01, -1.3934e-01,  9.9269e-01,  3.7330e-01,  1.2940e+00,
+         -9.5943e-01, -1.9997e+00,  6.2478e-01, -1.1029e+00,  2.1852e+00,
+         -5.5836e-02,  1.0432e+00,  5.8157e-01, -9.1628e-02,  8.8692e-01,
+         -2.9720e-02,  6.3342e-01,  1.3780e-01,  9.4910e-02,  1.8494e+00,
+         -7.5284e-01,  4.2030e-01,  1.0026e+00, -4.9365e-01, -5.2605e-02,
+          1.9917e-01,  6.5652e-01,  1.5258e-03, -3.6600e-01,  6.7940e-01,
+         -1.7813e+00, -6.9951e-01,  4.9702e-03,  1.1589e+00, -4.5067e-01,
+         -1.2742e+00,  6.2946e-01,  4.8273e-01,  1.1663e+00, -1.3433e+00,
+          3.8340e-01, -6.3305e-01,  3.2807e-01, -8.8513e-01,  5.2178e-01,
+          4.6166e-01, -1.6035e-01,  4.6263e-01,  4.6942e-02]])
+inputs: tensor([[ 1.8401e+00,  4.7266e-02, -3.5690e-01, -3.5338e-01,  7.0858e-01,
+         -7.0400e-01,  1.8408e-01,  4.0104e-01,  9.0827e-02,  1.3638e+00,
+         -6.4228e-01, -1.5410e+00, -1.2894e+00,  2.6241e+00,  1.5077e-01,
+         -3.1153e-01,  1.1522e+00,  1.6552e+00,  2.5389e-02,  3.1288e-01,
+         -1.4605e-01,  3.1821e-01, -1.0674e+00,  4.6885e-01, -4.7929e-01,
+          8.4287e-01, -1.6952e-02,  5.5523e-01,  8.9376e-01, -1.3294e+00,
+          1.1928e+00,  9.6145e-01, -3.6188e-01, -1.2793e+00, -2.0456e-01,
+          2.5081e-02,  6.8284e-01,  5.0952e-01, -3.5464e-01, -1.4633e+00,
+          1.0786e+00, -2.3886e+00,  5.9362e-01, -3.9318e-01, -1.5324e+00,
+         -6.5247e-01,  4.5102e-01, -2.2184e-01,  3.9737e-01, -5.9796e-01,
+          3.6556e-01,  2.5369e+00,  9.9740e-01,  1.4088e-01, -1.9335e+00,
+          5.3602e-01, -8.1784e-02,  2.4092e+00, -7.3990e-03, -1.5312e+00,
+         -1.4893e-01, -5.4581e-01, -7.7376e-01,  4.3086e-01],
+        [-1.8223e-01, -3.7319e-01, -1.0984e+00,  6.3161e-01,  5.1522e-01,
+          3.1002e-01,  1.0003e+00,  6.9534e-01, -3.4574e-01,  1.2280e-01,
+          3.0399e-01,  1.3305e-01,  1.0860e+00, -7.3905e-01, -2.5040e-01,
+         -1.4277e+00, -1.9477e-01,  4.5058e-01, -6.5393e-01, -2.8608e-02,
+          1.9164e+00,  6.7650e-01, -4.9410e-01, -4.3937e-01, -6.7226e-01,
+         -8.5618e-01, -4.1976e-01, -2.3037e+00, -2.4469e-03,  1.8568e+00,
+          1.2552e+00,  2.9163e-02, -7.2441e-01,  5.4152e-01,  1.3277e-01,
+          6.5169e-01, -1.3720e+00, -1.5072e+00,  7.2424e-01, -8.9811e-01,
+          5.0621e-01, -3.7838e-01,  3.3022e-01,  8.8783e-01, -7.4641e-01,
+          9.1653e-01,  1.1723e+00, -1.0407e+00,  1.9256e-01, -5.7676e-01,
+         -1.2574e+00, -4.1160e-01, -1.3235e+00,  9.0469e-01,  5.8404e-01,
+         -1.5139e-02,  1.1392e+00, -5.3670e-01, -1.5221e-01,  9.1694e-01,
+          8.1467e-01,  8.2936e-01,  2.4871e-01, -4.6818e-01]])
+candidate_state: tensor([[-0.1593, -0.1698, -0.1330, -0.1632,  0.3922, -0.1402, -0.0884, -0.1460,
+         -0.0449,  0.0844,  0.6001, -0.0847, -0.1378,  1.2785,  0.1228, -0.0528,
+          0.1456, -0.0393,  0.0507,  0.0319, -0.1696, -0.1675,  0.6443, -0.1558,
+          0.4846, -0.0680,  0.0100, -0.1373,  0.6775, -0.1632, -0.0571,  0.3180,
+          0.2344,  0.2824, -0.1511, -0.1037,  0.0949,  0.1951,  0.0194, -0.0811,
+          0.9423, -0.1650, -0.1700,  0.1729, -0.0303,  0.1578,  0.5448,  1.0180,
+          1.5787, -0.1188, -0.1045,  0.2292, -0.1604, -0.1671, -0.1420,  0.1210,
+         -0.0996,  0.0460, -0.1560, -0.1654,  0.3172,  0.3539, -0.0818,  0.1329],
+        [-0.1671,  0.1006, -0.0054,  0.3574,  0.1090, -0.0982, -0.1431,  0.7585,
+         -0.1230, -0.1652,  0.5398,  0.2135,  0.0815, -0.1415,  0.4712,  0.1204,
+         -0.0609,  0.7595,  0.5854,  0.1861, -0.1662, -0.1661, -0.1623,  0.8561,
+          0.1370, -0.1056,  0.0661,  0.2555, -0.0554,  0.1096, -0.1612,  0.2629,
+         -0.1492, -0.1670, -0.1545,  0.1944,  0.1267, -0.1255,  0.1469,  0.0094,
+         -0.1164, -0.1436, -0.0122,  1.0077,  0.2955,  0.0082,  0.0175, -0.0719,
+         -0.0942, -0.1700, -0.1684, -0.1105,  0.3418, -0.1696,  0.0178,  0.1720,
+         -0.1692,  0.3445, -0.0325, -0.1003,  0.0631,  0.2025,  0.1033, -0.1603]])
+new_state: tensor([[ 3.0065e-01, -1.5994e-01, -1.7129e-01, -5.9928e-01,  3.3030e-02,
+         -1.4135e-01,  1.5756e-01, -6.5397e-01,  6.9412e-01,  1.2506e+00,
+          9.9149e-01,  1.3720e-01,  1.8509e-01,  3.0218e-01, -1.6458e-01,
+         -5.6620e-01,  3.4399e-01,  4.4241e-02, -6.1489e-01,  1.1947e+00,
+         -8.8830e-01,  1.8430e-02, -1.2241e-01, -5.9911e-01,  4.1361e-01,
+          4.3404e-02, -6.5853e-01, -8.5420e-01,  2.4157e-01,  4.5966e-02,
+         -5.3557e-01, -7.7008e-01,  1.4560e-01, -1.2823e-01, -8.4849e-01,
+          3.6207e-01, -1.3751e-01,  2.9826e-01,  1.2980e-01,  1.1822e-02,
+         -1.3635e-01,  5.7094e-01,  1.0876e-01,  1.2944e+00,  5.9313e-02,
+          3.4367e-01,  4.2896e-01,  1.8212e-02, -8.6522e-01, -8.4371e-01,
+         -9.3482e-01,  6.9044e-01, -3.6366e-01,  8.9085e-02,  1.7719e-01,
+          3.6454e-01, -1.5670e-01, -5.3318e-01, -8.0564e-01, -8.9532e-01,
+          1.3512e-02,  1.0170e+00, -1.3153e-01,  2.4273e-01],
+        [-2.8919e-01,  2.7447e-01, -7.8860e-01, -3.5351e-01,  3.2064e-01,
+          2.7389e-02, -7.6179e-01,  2.9975e-01, -2.5552e-01,  5.5705e-01,
+          1.5259e-01,  5.9709e-01,  4.3889e-01, -9.8611e-01,  4.5591e-01,
+         -2.5386e-01, -1.0171e-01,  8.8091e-01,  4.7501e-01,  7.6285e-01,
+         -5.7914e-01, -1.1206e+00,  2.4742e-01, -1.6366e-01,  1.2032e+00,
+         -7.9686e-02,  5.7472e-01,  4.2523e-01, -7.4252e-02,  5.1423e-01,
+         -9.2753e-02,  4.5579e-01,  1.7972e-04, -3.0670e-02,  8.8862e-01,
+         -2.9870e-01,  2.7951e-01,  4.6172e-01, -1.8654e-01, -2.2880e-02,
+          4.7877e-02,  2.7290e-01, -5.0561e-03,  2.9262e-01,  4.9533e-01,
+         -9.2331e-01, -3.5575e-01, -3.1864e-02,  5.5810e-01, -3.1609e-01,
+         -7.4404e-01,  2.7467e-01,  4.1515e-01,  5.2582e-01, -6.9069e-01,
+          2.8203e-01, -4.1068e-01,  3.3594e-01, -4.7633e-01,  2.2352e-01,
+          2.7057e-01,  1.3602e-02,  2.9034e-01, -5.2430e-02]])
 ______________ TestConsciousnessStateManager.test_rl_optimization ______________
 
-self = <test_consciousness_state_management.TestConsciousnessStateManager object at 0x7b4a4aead9f0>
+self = <test_consciousness_state_management.TestConsciousnessStateManager object at 0x74d4e1d937f0>
 device = device(type='cpu'), state_manager = ConsciousnessStateManager()
 
     def test_rl_optimization(self, device, state_manager):
@@ -1857,75 +1806,85 @@ E         Use -v to get more diff
 
 tests/unit/state/test_consciousness_state_management.py:77: AssertionError
 ----------------------------- Captured stdout call -----------------------------
-memory_gate: tensor([[0.5462],
-        [0.4592]])
-state: tensor([[-0.0215, -0.2080,  0.0664,  0.1954, -0.2166, -0.6670, -0.1647,  0.8755,
-          1.4463, -0.2060,  0.9041,  0.5017,  1.2995,  1.4059, -0.1122,  0.4749,
-          0.0219, -0.8775, -0.8715, -0.0937, -1.4074,  0.2708,  0.0475,  0.0833,
-          0.2527, -0.5745,  2.0306,  0.1610, -2.1403,  1.5936,  1.5685, -1.3849,
-          1.2188, -0.3131,  0.3581, -0.1170, -0.3196, -1.0305, -1.5965, -1.0688,
-          0.9409, -0.2300,  0.2976,  0.6790,  0.5668,  1.1681,  0.0153, -0.2132,
-         -0.4667, -1.2876, -0.0721, -0.4406,  0.4029,  0.3752,  0.2712, -2.2890,
-         -2.2416, -0.6094,  1.3367,  0.3362, -0.2169, -1.6600,  0.8313, -0.7743],
-        [-0.4288, -1.0654, -0.1357, -1.0145, -0.8882, -0.6013, -0.3724, -1.1474,
-         -1.1120, -2.0784,  1.0906, -2.2554, -0.2268, -0.7192, -1.2673, -0.1355,
-          0.2638,  0.2265, -0.3228, -0.7810, -0.1246, -0.4671, -2.2133, -0.9329,
-         -0.1660,  0.0689, -0.0612, -1.4402, -0.5815,  0.1381, -0.6190,  0.0543,
-          0.1941, -0.6193, -0.2559, -1.1757,  0.5475,  0.5596,  0.1200, -0.7053,
-          0.2003, -0.6909,  0.0458, -0.6171, -0.3177, -1.5047, -1.3826, -0.4256,
-          0.8921, -0.9193, -0.9078,  0.2017, -1.9540, -1.1114,  1.7960, -1.2983,
-          0.9973, -0.0068,  0.0578, -0.3034, -0.3879, -1.7129,  0.1869,  1.9621]])
-inputs: tensor([[ 0.7523,  2.6620, -0.3555,  0.7638, -0.3027,  0.9788, -1.9908,  0.3391,
-          1.4979, -0.6132,  1.0638, -1.6855,  0.4368, -0.5107, -0.5266,  2.0736,
-          0.5547,  1.9405,  0.0494, -0.4679, -0.9783,  0.3979,  0.5574, -0.0319,
-          0.8016, -1.4584,  0.6052, -1.2437, -1.1315,  0.1944, -1.4731, -0.0727,
-         -1.1874,  1.2561, -1.1548,  1.2036, -0.1809, -0.0750,  0.0230,  0.8032,
-          0.7380,  1.8496,  0.4837, -1.5867,  0.1092, -1.8601,  1.0840,  1.0974,
-         -0.7771, -1.2941,  1.9953,  0.1119, -0.9055, -2.3305, -0.0821, -0.9397,
-          0.6400,  2.8995,  2.2591,  0.7272,  0.4535,  0.0455, -0.9516,  0.1513],
-        [-0.0240,  1.3383, -0.4531,  0.0491,  0.9277,  0.3967,  1.1144, -1.0312,
-         -0.6109, -1.7256, -0.1511,  0.8318,  1.3060,  0.0076, -0.1055, -1.1893,
-          0.4162,  0.5758, -0.3197, -0.0292, -0.3551, -1.9816,  2.0662, -2.0654,
-          2.2116,  1.8103, -0.1501,  1.7537, -1.3544, -0.8756,  0.4902, -0.8912,
-          0.4791, -0.7841,  0.8482, -0.6068,  0.7265,  1.6602,  0.0955, -1.5102,
-          1.4641, -0.1426, -1.1310, -0.7143,  0.3114, -0.6710, -1.1766,  0.0058,
-         -1.4802,  1.3942,  0.9471,  0.7597, -0.2500,  0.0186, -0.7708,  0.1165,
-         -0.2390,  1.7303,  0.2569,  1.6242, -0.1922, -0.8932,  0.3570,  0.6594]])
-candidate_state: tensor([[-0.1488,  0.5099,  0.3296,  0.5263,  0.1305, -0.1505,  0.8713,  0.0375,
-         -0.1099,  0.7244,  0.8453, -0.1518, -0.1285, -0.1192,  0.8361, -0.1623,
-          0.4195, -0.1592,  0.6800, -0.1696,  0.0315, -0.1668,  0.4759,  0.6916,
-         -0.1028, -0.1390, -0.1208,  0.0050,  1.0333,  1.1151, -0.1152, -0.0967,
-          0.8912, -0.1543,  0.1798, -0.1680,  0.4579, -0.1591,  1.4220,  0.2381,
-          1.0167, -0.0852,  0.0639, -0.1538,  0.5371,  0.3114, -0.1636,  0.1756,
-         -0.1596,  0.2287,  0.1233, -0.1335, -0.1089,  0.8543, -0.1557,  1.5388,
-         -0.1632, -0.0414, -0.1596, -0.0528, -0.0988, -0.0527,  0.4454, -0.1669],
-        [-0.1699, -0.0944,  0.7841,  0.1666, -0.0395,  0.9619,  0.2882, -0.0425,
-          0.3661, -0.0592,  0.0745,  0.5798,  0.1708, -0.1653,  0.6857,  0.1239,
-         -0.1658, -0.1699, -0.1338, -0.1316, -0.1035, -0.0811, -0.0420,  0.1198,
-         -0.0345,  0.0696,  0.0263,  0.6482,  1.6582,  0.1678,  0.0300, -0.1282,
-         -0.1322, -0.1540, -0.0553, -0.1393, -0.1045, -0.1696,  0.3409,  0.3694,
-          0.0204, -0.1651, -0.1528,  0.4094, -0.1415, -0.1426,  0.0911,  0.5620,
-         -0.0106, -0.1610,  0.4916,  0.1205,  0.7164,  0.1197,  0.2398, -0.1631,
-          0.2643,  0.2600,  0.4690, -0.1605, -0.1686,  0.4946, -0.1465,  0.2930]])
-new_state: tensor([[-0.0793,  0.1178,  0.1858,  0.3455, -0.0591, -0.4326,  0.3055,  0.4953,
-          0.7401,  0.2162,  0.8774,  0.2052,  0.6515,  0.7138,  0.3181,  0.1857,
-          0.2023, -0.5515, -0.1675, -0.1281, -0.7544,  0.0722,  0.2419,  0.3594,
-          0.0914, -0.3769,  1.0543,  0.0902, -0.7001,  1.3764,  0.8045, -0.8003,
-          1.0702, -0.2411,  0.2772, -0.1401,  0.0332, -0.6350, -0.2268, -0.4758,
-          0.9753, -0.1643,  0.1915,  0.3010,  0.5533,  0.7793, -0.0659, -0.0368,
-         -0.3274, -0.5995,  0.0166, -0.3013,  0.1707,  0.5926,  0.0775, -0.5520,
-         -1.2984, -0.3516,  0.6577,  0.1597, -0.1633, -0.9306,  0.6562, -0.4986],
-        [-0.2888, -0.5402,  0.3618, -0.3758, -0.4292,  0.2441, -0.0151, -0.5498,
-         -0.3126, -0.9863,  0.5411, -0.7220, -0.0118, -0.4196, -0.2111,  0.0048,
-          0.0315,  0.0121, -0.2206, -0.4298, -0.1132, -0.2583, -1.0390, -0.3636,
-         -0.0949,  0.0693, -0.0139, -0.3107,  0.6298,  0.1541, -0.2680, -0.0444,
-          0.0176, -0.3676, -0.1474, -0.6152,  0.1949,  0.1653,  0.2394, -0.1241,
-          0.1030, -0.4065, -0.0616, -0.0619, -0.2224, -0.7680, -0.5856,  0.1086,
-          0.4039, -0.5092, -0.1510,  0.1578, -0.5098, -0.4455,  0.9544, -0.6844,
-          0.6009,  0.1375,  0.2802, -0.2261, -0.2693, -0.5190,  0.0066,  1.0594]])
+memory_gate: tensor([[0.5689],
+        [0.5773]])
+state: tensor([[-0.8651,  0.1913, -0.0645, -0.8713,  0.8679, -0.4472,  0.0373,  0.5370,
+         -0.6810, -2.0182,  0.9289,  0.2956, -0.0326,  0.2511, -0.2576, -1.7458,
+          0.1569,  0.3154,  2.2505,  0.6932, -0.5283, -0.9864,  1.6864, -1.1497,
+         -0.1290,  0.2553,  0.8380,  1.9550,  0.5308, -0.3694,  0.0425, -0.0084,
+         -0.2790,  0.6615, -0.6750,  0.6444,  0.4084, -1.5827, -1.8837,  1.2499,
+         -0.3463, -0.1256, -0.8956,  0.7741,  0.4321,  0.0651, -0.9160, -0.0812,
+          0.2652,  0.8787, -0.0612,  1.3209,  0.4303, -0.7373,  2.0433,  3.0962,
+          0.5593,  0.1466, -0.0933, -1.1014, -1.4859,  0.2024, -0.3897,  0.6157],
+        [-3.0168,  2.3136, -0.3806,  0.2590,  0.0584,  1.6136,  1.7489,  0.4145,
+          1.2160, -1.2218,  0.4253, -0.7097, -0.1573, -0.1616,  0.7932, -1.3236,
+         -1.9277,  0.9064,  0.1850, -0.0331,  1.7243, -1.1046, -0.1074,  1.9060,
+          0.2643, -0.5370,  0.2055,  0.9203, -0.5956, -1.5115, -0.8483, -0.2554,
+          1.1679, -0.0857,  1.5259,  0.9223, -1.9911,  0.2451, -1.4332,  1.7816,
+         -1.2721, -0.3487,  0.2230,  3.4685, -1.3482, -0.8909, -1.1812,  1.8120,
+         -0.6480, -2.1399,  1.6707, -1.4702,  0.3821, -0.2261,  0.4000,  1.3051,
+         -0.1963, -0.8810,  2.2989,  1.1835, -0.1628,  1.5732, -0.5142,  0.6686]])
+inputs: tensor([[-1.5623,  1.0835,  0.2832,  2.1419, -0.4139,  0.6154,  0.2956, -0.9230,
+          0.7107,  1.4511, -1.6755, -1.4961, -1.2123, -0.8074, -0.4882,  0.4931,
+         -0.5989,  0.4135, -1.5378, -0.7442, -0.4680, -1.4017, -0.5087, -0.6802,
+          0.0890,  1.1821,  0.9811, -1.2883, -2.1560,  0.3297,  0.0073,  1.3234,
+          1.7996, -0.5895,  0.1076,  0.5471, -0.1427,  1.2879,  0.0487,  1.1587,
+          0.3419, -0.0158,  0.2253,  0.5263, -0.9731,  0.5673,  0.5273, -1.4535,
+         -0.7676, -0.2333, -0.6358,  0.0450,  0.0751, -0.0303,  1.5297,  0.0112,
+         -0.7199, -0.4536,  0.2624,  0.9440,  0.2350,  1.6140, -0.3795,  0.3268],
+        [-0.6091,  1.9324, -0.9755,  1.1966, -0.5263,  0.5682,  0.1579, -1.9945,
+         -0.0391, -1.0154, -1.0960, -1.8876, -0.3930, -1.5992,  0.5002, -0.7950,
+          1.2349, -1.0601, -0.2269,  2.6848,  1.2389,  0.6370,  1.6119,  0.2389,
+          0.6865, -1.6743,  0.5444, -0.8917, -1.6053,  1.0440, -0.8913,  0.6154,
+         -1.4667,  0.8872, -0.1768,  1.2787, -0.0596,  0.2800,  1.7361, -0.2370,
+         -0.5011, -0.3721,  0.0923,  2.1334, -0.0535, -0.5073, -1.9337,  0.1136,
+          0.5876, -0.3716, -0.6980, -0.7876, -0.1465, -1.3959, -0.0750,  1.1492,
+          0.5471, -0.1991, -1.7313,  1.5657,  0.0914, -1.0803,  1.1009, -0.4079]])
+candidate_state: tensor([[-7.1845e-02, -9.1215e-02,  1.3143e-02,  3.9916e-01, -1.6985e-01,
+          7.4923e-01,  8.6547e-01,  2.5507e-01,  3.9535e-01, -1.2298e-01,
+          2.5344e-01,  1.0914e+00, -6.6870e-02, -1.5907e-01,  2.1158e-01,
+          6.9935e-01, -1.3565e-01,  1.0853e-01,  1.7436e-02, -9.5615e-02,
+          1.1349e-01,  3.2220e-01,  1.4688e-01, -7.9378e-02, -1.6592e-01,
+         -1.5490e-01,  1.5471e-01, -1.3460e-01,  3.5220e-01, -9.5081e-02,
+          6.8580e-03, -2.6760e-02,  1.2754e+00,  3.1376e-01, -3.2632e-02,
+         -1.2465e-03,  2.2213e-01,  8.2984e-01, -1.4443e-01,  8.7383e-03,
+         -6.0103e-02,  1.2926e-01, -1.6993e-01, -6.0617e-02, -4.1811e-02,
+         -1.5484e-01, -8.1304e-02,  1.4809e-01,  1.3071e-01, -9.5276e-02,
+         -1.4271e-01, -5.1574e-02,  2.7614e-01,  9.6272e-02,  1.3704e-01,
+         -1.2629e-02,  2.3144e-01,  1.1187e-01, -7.9365e-02, -1.2208e-01,
+         -6.6970e-02,  8.8518e-01, -1.6013e-01,  2.8585e-02],
+        [ 9.6251e-01,  1.7107e-01,  6.1253e-01, -8.1045e-02, -8.5124e-02,
+          9.9069e-02, -1.4558e-01,  7.5954e-01,  1.9535e-01, -1.4851e-01,
+         -1.0126e-01,  6.6609e-01,  4.5583e-01,  1.8112e-03,  1.2469e+00,
+         -1.3871e-01,  2.6572e-01,  5.4242e-01, -1.0444e-01,  3.7136e-02,
+         -1.5152e-01, -1.4822e-01,  1.2675e-02, -1.1000e-01,  1.2832e-01,
+         -1.4161e-01, -1.6888e-01,  4.3755e-01, -9.7378e-02, -1.6572e-01,
+          7.4450e-01, -8.1778e-02, -1.6651e-01, -1.6095e-01, -1.6986e-01,
+          5.5626e-01,  2.1462e-02,  3.6891e-01, -1.4796e-01,  2.7152e-01,
+         -1.6309e-01,  1.1605e+00, -8.8681e-02,  1.7153e-01,  1.5701e-02,
+          7.4811e-02, -1.0002e-01,  1.8022e-01, -5.3979e-02,  8.0313e-01,
+         -1.4762e-01,  2.5789e-01, -2.2100e-02, -1.3167e-01,  6.3364e-01,
+          9.2079e-01,  1.1454e-01, -1.6330e-01,  1.0924e-01,  1.4537e+00,
+          1.6380e-01,  1.5746e-01, -1.4073e-01,  3.9249e-01]])
+new_state: tensor([[-0.5231,  0.0695, -0.0311, -0.3236,  0.4206,  0.0686,  0.3943,  0.4155,
+         -0.2170, -1.2012,  0.6377,  0.6386, -0.0474,  0.0743, -0.0553, -0.6918,
+          0.0308,  0.2262,  1.2879,  0.3531, -0.2517, -0.4223,  1.0227, -0.6883,
+         -0.1449,  0.0785,  0.5434,  1.0542,  0.4538, -0.2511,  0.0272, -0.0163,
+          0.3911,  0.5116, -0.3981,  0.3661,  0.3281, -0.5427, -1.1339,  0.7149,
+         -0.2229, -0.0157, -0.5828,  0.4143,  0.2278, -0.0297, -0.5562,  0.0176,
+          0.2072,  0.4589, -0.0963,  0.7293,  0.3639, -0.3779,  1.2215,  1.7561,
+          0.4180,  0.1316, -0.0873, -0.6793, -0.8742,  0.4967, -0.2908,  0.3626],
+        [-1.3346,  1.4079,  0.0392,  0.1152, -0.0023,  0.9734,  0.9481,  0.5603,
+          0.7845, -0.7681,  0.2027, -0.1281,  0.1019, -0.0925,  0.9849, -0.8227,
+         -1.0005,  0.7525,  0.0626, -0.0034,  0.9314, -0.7003, -0.0566,  1.0538,
+          0.2068, -0.3699,  0.0472,  0.7162, -0.3850, -0.9426, -0.1750, -0.1820,
+          0.6038, -0.1175,  0.8091,  0.7676, -1.1403,  0.2974, -0.8899,  1.1432,
+         -0.8033,  0.2892,  0.0912,  2.0748, -0.7717, -0.4827, -0.7242,  1.1222,
+         -0.3969, -0.8958,  0.9021, -0.7397,  0.2113, -0.1862,  0.4987,  1.1427,
+         -0.0649, -0.5776,  1.3733,  1.2977, -0.0248,  0.9747, -0.3563,  0.5519]])
 ______________ TestConsciousnessStateManager.test_adaptive_gating ______________
 
-self = <test_consciousness_state_management.TestConsciousnessStateManager object at 0x7b4a4aeafe80>
+self = <test_consciousness_state_management.TestConsciousnessStateManager object at 0x74d4e1d93d00>
 device = device(type='cpu'), state_manager = ConsciousnessStateManager()
 
     def test_adaptive_gating(self, device, state_manager):
@@ -1949,158 +1908,157 @@ device = device(type='cpu'), state_manager = ConsciousnessStateManager()
         assert torch.mean(metrics1['memory_gate']) > torch.mean(metrics2['memory_gate'])
     
         # Energy cost should be higher for more different inputs
-        assert metrics2['energy_cost'].item() > metrics1['energy_cost'].item()
-        # Test memory gate properties
->       assert metrics1['memory_gate'].shape == (batch_size, hidden_dim)  # Updated shape
-E       assert torch.Size([2, 1]) == (2, 64)
-E         
-E         At index 1 diff: 1 != 64
-E         Use -v to get more diff
+>       assert metrics2['energy_cost'].item() > metrics1['energy_cost'].item()
+E       assert 0.4617244601249695 > 0.4718417823314667
+E        +  where 0.4617244601249695 = <built-in method item of Tensor object at 0x74d4e1dfa7a0>()
+E        +    where <built-in method item of Tensor object at 0x74d4e1dfa7a0> = tensor(0.4617).item
+E        +  and   0.4718417823314667 = <built-in method item of Tensor object at 0x74d4e1dfae80>()
+E        +    where <built-in method item of Tensor object at 0x74d4e1dfae80> = tensor(0.4718).item
 
-tests/unit/state/test_consciousness_state_management.py:131: AssertionError
+tests/unit/state/test_consciousness_state_management.py:129: AssertionError
 ----------------------------- Captured stdout call -----------------------------
-memory_gate: tensor([[0.5062],
-        [0.5043]])
-state: tensor([[ 0.0506, -0.2398,  1.6421,  0.2121,  0.4183, -0.3951,  0.0857, -0.7813,
-         -0.4785,  0.0983,  0.4213, -1.8525,  0.8484,  0.3719, -0.3180,  1.6484,
-         -0.1868, -0.5029, -0.8807, -0.2865, -1.7898,  0.7489,  1.3528,  0.4826,
-          1.2925,  0.3711,  0.9781, -1.6529, -2.0106,  1.0006,  0.2524,  1.4082,
-         -1.0446,  1.9176,  0.8499,  2.8470,  0.1242,  0.1507,  0.0764,  0.5535,
-          0.1754,  0.1945,  0.2193, -0.1892,  0.2160,  0.1787, -0.1720,  1.1447,
-         -0.2067,  0.0790, -0.5909,  0.3940,  2.8180, -0.7932, -0.8626,  0.3280,
-          0.8058, -0.5039,  2.9940, -1.1779,  0.1657, -0.4336,  1.2542,  0.8841],
-        [-0.8410,  0.6608,  0.0290, -0.3482,  1.6426,  0.7160,  0.1910, -1.3790,
-         -0.9635, -0.8112,  0.7335, -2.6119,  1.9640, -0.2729,  0.7134,  1.5322,
-         -2.0654, -1.4775,  1.4185, -0.9391,  1.8017, -0.0064,  2.7329, -0.5136,
-         -0.4366,  0.3185, -0.2112,  0.8384, -2.1639, -1.0864,  0.7869, -1.5377,
-         -0.7072, -1.6139,  0.9718,  0.1794,  2.0044,  0.4906, -0.9631, -0.6274,
-          0.0555,  0.0521,  1.2565,  0.2417, -0.4799, -0.4519, -0.9609, -0.7552,
-          0.2185, -0.1004, -0.3405, -0.1499,  0.1147, -1.5094, -0.6797, -0.1746,
-         -2.1251, -0.8197,  0.5801,  0.9124,  0.6021,  1.8838,  1.6073,  0.0199]])
-inputs: tensor([[ 0.0338, -0.2667,  1.6725,  0.3937,  0.1340, -0.4424,  0.0045, -0.7433,
-         -0.4430,  0.0117,  0.3178, -1.9181,  0.6798,  0.2779, -0.2679,  1.7328,
-         -0.2127, -0.5624, -0.9237, -0.3380, -1.4841,  0.7176,  1.4444,  0.4850,
-          1.1608,  0.2265,  1.0889, -1.5520, -2.0845,  1.0676,  0.1799,  1.3778,
-         -0.9500,  1.9225,  0.8332,  2.9720,  0.0696,  0.2008,  0.2611,  0.5784,
-          0.0589,  0.0756,  0.1202, -0.1545,  0.3159,  0.0598, -0.2957,  1.2115,
-         -0.3158,  0.0070, -0.3777,  0.3148,  2.7799, -0.8709, -0.8659,  0.3862,
-          0.8072, -0.3920,  3.0520, -1.1034,  0.1750, -0.3997,  1.3462,  0.9382],
-        [-0.7702,  0.8175,  0.1366, -0.2156,  1.6811,  0.8306,  0.2065, -1.3656,
-         -0.9539, -0.7773,  0.7894, -2.5896,  1.9660, -0.3568,  0.6637,  1.3902,
-         -2.2831, -1.5512,  1.5264, -0.8132,  1.8339, -0.1022,  2.7984, -0.4815,
-         -0.3301,  0.3858, -0.1618,  0.9219, -2.1473, -1.0390,  0.8130, -1.3548,
-         -0.7012, -1.5288,  0.9455,  0.0747,  2.1097,  0.3419, -0.9170, -0.5872,
-         -0.0684,  0.0134,  1.1948,  0.2618, -0.4034, -0.3946, -0.8363, -0.5991,
-          0.2124, -0.2520, -0.3034, -0.0122,  0.1790, -1.5616, -0.6506, -0.1741,
-         -2.1074, -0.9239,  0.5375,  1.0369,  0.3538,  1.8186,  1.4305, -0.0317]])
-candidate_state: tensor([[-0.1682,  0.6305,  0.1391, -0.0379, -0.1103,  0.3924, -0.1451, -0.0442,
-         -0.1665,  0.4044,  0.4181, -0.1691,  0.1830, -0.1562,  1.3820,  0.1628,
-          0.5870, -0.1204, -0.1648,  0.2042,  0.0785,  0.1517,  0.8893, -0.0054,
-          0.3180, -0.0830,  0.0130,  0.3623, -0.1452,  0.9234,  0.0261, -0.1624,
-         -0.1161, -0.1522,  0.0030, -0.1676, -0.1252, -0.0715,  0.0391, -0.1669,
-         -0.1031,  0.5322,  0.0971,  0.1577, -0.1697,  0.4733, -0.1690,  0.5334,
-         -0.1694, -0.1700,  0.0745, -0.1681, -0.1531,  0.3414, -0.1697,  0.2968,
-         -0.1589,  0.3600, -0.0283, -0.1025, -0.1692,  0.1467,  0.0326,  0.0555],
-        [ 0.0959,  0.0024, -0.1688,  0.1496,  0.2337,  0.2310, -0.1189, -0.1248,
-          0.0291, -0.1688, -0.0878,  0.0423,  0.9503, -0.1578,  0.1605,  2.1299,
-          0.8396,  0.2894, -0.0953,  0.8452,  0.9245, -0.1420,  0.5159, -0.1498,
-         -0.0661, -0.1692,  0.0277,  0.6670,  0.1216, -0.1689,  1.2452, -0.1661,
-          0.6279,  0.5342, -0.1416,  0.8534, -0.0500,  1.1048,  0.1970, -0.0544,
-         -0.0465, -0.1682,  0.0205,  0.2069, -0.1674,  0.1215, -0.1691, -0.1669,
-          0.1010,  0.2588, -0.1273,  0.1399, -0.0859,  0.1891,  0.7670,  0.8385,
-          0.0037,  0.3226, -0.0525, -0.1687, -0.1443,  0.1874, -0.0850, -0.1620]])
-new_state: tensor([[-5.7413e-02,  1.8997e-01,  8.9996e-01,  8.8667e-02,  1.5728e-01,
-         -6.2581e-03, -2.8236e-02, -4.1736e-01, -3.2448e-01,  2.4944e-01,
-          4.1975e-01, -1.0213e+00,  5.1983e-01,  1.1115e-01,  5.2137e-01,
-          9.1485e-01,  1.9530e-01, -3.1400e-01, -5.2724e-01, -4.4224e-02,
-         -8.6728e-01,  4.5400e-01,  1.1239e+00,  2.4165e-01,  8.1129e-01,
-          1.4691e-01,  5.0157e-01, -6.5786e-01, -1.0895e+00,  9.6247e-01,
-          1.4063e-01,  6.3267e-01, -5.8614e-01,  8.9561e-01,  4.3172e-01,
-          1.3585e+00,  1.0695e-03,  4.0988e-02,  5.7962e-02,  1.9777e-01,
-          3.7871e-02,  3.6124e-01,  1.5894e-01, -1.7939e-02,  2.5594e-02,
-          3.2418e-01, -1.7053e-01,  8.4289e-01, -1.8827e-01, -4.3938e-02,
-         -2.6239e-01,  1.1647e-01,  1.3510e+00, -2.3295e-01, -5.2048e-01,
-          3.1261e-01,  3.2943e-01, -7.7295e-02,  1.5016e+00, -6.4692e-01,
-          3.1950e-04, -1.4709e-01,  6.5099e-01,  4.7498e-01],
-        [-3.7657e-01,  3.3442e-01, -6.9044e-02, -1.0146e-01,  9.4426e-01,
-          4.7562e-01,  3.7356e-02, -7.5734e-01, -4.7149e-01, -4.9274e-01,
-          3.2641e-01, -1.2963e+00,  1.4616e+00, -2.1585e-01,  4.3931e-01,
-          1.8285e+00, -6.2549e-01, -6.0169e-01,  6.6817e-01, -5.4695e-02,
-          1.3669e+00, -7.3631e-02,  1.6340e+00, -3.3325e-01, -2.5295e-01,
-          7.6780e-02, -9.2802e-02,  7.5344e-01, -1.0310e+00, -6.3160e-01,
-          1.0141e+00, -8.5782e-01, -4.5441e-02, -5.4919e-01,  4.1991e-01,
-          5.1347e-01,  9.8607e-01,  7.9507e-01, -3.8805e-01, -3.4340e-01,
-          4.9378e-03, -5.7109e-02,  6.4384e-01,  2.2446e-01, -3.2501e-01,
-         -1.6764e-01, -5.6840e-01, -4.6361e-01,  1.6022e-01,  7.7690e-02,
-         -2.3483e-01, -6.2226e-03,  1.5284e-02, -6.6753e-01,  3.7405e-02,
-          3.2753e-01, -1.0699e+00, -2.5349e-01,  2.6655e-01,  3.7655e-01,
-          2.3213e-01,  1.0429e+00,  7.6850e-01, -7.0287e-02]])
-memory_gate: tensor([[0.4690],
-        [0.4612]])
-state: tensor([[ 0.0506, -0.2398,  1.6421,  0.2121,  0.4183, -0.3951,  0.0857, -0.7813,
-         -0.4785,  0.0983,  0.4213, -1.8525,  0.8484,  0.3719, -0.3180,  1.6484,
-         -0.1868, -0.5029, -0.8807, -0.2865, -1.7898,  0.7489,  1.3528,  0.4826,
-          1.2925,  0.3711,  0.9781, -1.6529, -2.0106,  1.0006,  0.2524,  1.4082,
-         -1.0446,  1.9176,  0.8499,  2.8470,  0.1242,  0.1507,  0.0764,  0.5535,
-          0.1754,  0.1945,  0.2193, -0.1892,  0.2160,  0.1787, -0.1720,  1.1447,
-         -0.2067,  0.0790, -0.5909,  0.3940,  2.8180, -0.7932, -0.8626,  0.3280,
-          0.8058, -0.5039,  2.9940, -1.1779,  0.1657, -0.4336,  1.2542,  0.8841],
-        [-0.8410,  0.6608,  0.0290, -0.3482,  1.6426,  0.7160,  0.1910, -1.3790,
-         -0.9635, -0.8112,  0.7335, -2.6119,  1.9640, -0.2729,  0.7134,  1.5322,
-         -2.0654, -1.4775,  1.4185, -0.9391,  1.8017, -0.0064,  2.7329, -0.5136,
-         -0.4366,  0.3185, -0.2112,  0.8384, -2.1639, -1.0864,  0.7869, -1.5377,
-         -0.7072, -1.6139,  0.9718,  0.1794,  2.0044,  0.4906, -0.9631, -0.6274,
-          0.0555,  0.0521,  1.2565,  0.2417, -0.4799, -0.4519, -0.9609, -0.7552,
-          0.2185, -0.1004, -0.3405, -0.1499,  0.1147, -1.5094, -0.6797, -0.1746,
-         -2.1251, -0.8197,  0.5801,  0.9124,  0.6021,  1.8838,  1.6073,  0.0199]])
-inputs: tensor([[-0.2376, -0.8244,  0.0904,  1.0773,  1.6568, -0.6134, -0.3269,  0.4040,
-          0.7507,  0.1084, -0.1612, -0.3087, -1.3866,  0.8046, -2.2694, -0.1306,
-         -0.2509,  1.1359,  0.7172, -0.3170, -0.5547, -0.9630, -1.0305,  0.0547,
-         -0.6412,  2.2443,  0.4454, -0.3746,  1.0913,  0.7033, -0.0867,  1.2605,
-         -1.7285,  1.3198, -2.2360, -0.2569, -3.3546, -0.3919, -0.6417, -0.1279,
-         -0.3921, -0.4460, -0.8659,  0.6949, -0.2819, -0.5097, -0.6715, -2.1719,
-         -0.9818, -2.2484,  0.9584, -0.8479,  1.7785,  0.5551, -0.4691,  1.7394,
-          0.7342, -0.4807, -0.1376, -2.8601,  2.9471, -0.7846, -0.1871, -0.7135],
-        [ 0.8606,  0.0349, -0.3735,  1.4755, -0.5934, -0.4573,  0.8228,  0.7281,
-         -0.7496, -0.5768,  1.8176, -2.0233, -0.0195,  0.8657, -0.4995, -0.1977,
-          0.1576,  1.1969,  1.3169,  0.7488, -0.2331,  1.8397,  0.4234, -1.8047,
-         -0.1546, -0.7393,  0.3111,  0.8368, -0.2433, -1.0932,  1.6917,  1.4386,
-         -0.2131, -0.8554,  0.6413, -0.2498,  1.1356,  1.7848,  0.9047,  0.5775,
-         -0.4473, -1.7346,  0.1283,  1.9389,  1.3048, -0.0050,  0.4794, -0.8606,
-         -0.4214,  0.4029,  0.4657, -1.2204,  0.2184,  0.4402, -1.8191,  2.0318,
-         -0.7470,  0.0808,  0.5464,  0.0916, -1.6665, -0.3981, -1.3921,  0.0712]])
-candidate_state: tensor([[-0.1572, -0.1330, -0.0768,  0.0047, -0.1263,  0.2731,  0.1852, -0.1591,
-          0.2530, -0.1343, -0.0781,  0.4754,  1.5688,  0.1246,  0.5078,  0.8055,
-         -0.0852, -0.1391,  0.2882, -0.1449, -0.0747, -0.1401, -0.0021,  0.2782,
-          0.0717,  0.6166, -0.1678, -0.1639, -0.1700, -0.0290,  0.1495,  0.0968,
-          0.4199, -0.1593, -0.1522,  0.1278,  1.0590,  0.3123,  1.2636,  0.2317,
-          0.1405, -0.1617,  1.8838, -0.1248, -0.0811, -0.1627,  0.2076, -0.1527,
-         -0.1416, -0.0373, -0.0943, -0.0851,  0.1925,  0.6153, -0.1226,  0.4642,
-         -0.1663, -0.0485,  0.1012, -0.0961, -0.0811, -0.1168,  1.4008, -0.1170],
-        [-0.0912,  0.5933, -0.0997, -0.1519, -0.1473, -0.0810, -0.1700, -0.1618,
-         -0.0498, -0.0392, -0.1267,  0.2706, -0.1667, -0.1316, -0.0479, -0.1696,
-          0.7547,  0.0547,  0.7994, -0.0702,  0.2734,  0.3543,  0.2105,  0.2028,
-          0.6207,  0.0104, -0.0574, -0.0437, -0.1686, -0.1612, -0.1570,  0.4266,
-         -0.0116,  0.2529, -0.1450,  0.7103,  0.7853, -0.1583,  0.5463, -0.1573,
-          0.2063,  1.8892, -0.0067,  0.2862,  0.2535, -0.0541,  0.1101,  0.2193,
-          1.6806,  0.1290,  0.3082,  0.3273, -0.0456, -0.1548, -0.0569, -0.1295,
-          0.2808, -0.1299,  0.0923,  0.9996, -0.1251,  0.8161,  0.3616, -0.1024]])
-new_state: tensor([[-0.0597, -0.1831,  0.7293,  0.1020,  0.1291, -0.0403,  0.1385, -0.4509,
-         -0.0901, -0.0252,  0.1561, -0.6164,  1.2309,  0.2406,  0.1205,  1.2008,
-         -0.1328, -0.3097, -0.2601, -0.2113, -0.8791,  0.2768,  0.6333,  0.3741,
-          0.6443,  0.5015,  0.3696, -0.8622, -1.0332,  0.4539,  0.1977,  0.7118,
-         -0.2670,  0.8148,  0.3178,  1.4032,  0.6206,  0.2365,  0.7068,  0.3826,
-          0.1569,  0.0054,  1.1031, -0.1550,  0.0583, -0.0026,  0.0296,  0.4558,
-         -0.1721,  0.0172, -0.3272,  0.1396,  1.4239, -0.0453, -0.4697,  0.4003,
-          0.2896, -0.2621,  1.4579, -0.6035,  0.0347, -0.2654,  1.3320,  0.3526],
-        [-0.4370,  0.6244, -0.0403, -0.2425,  0.6782,  0.2866, -0.0035, -0.7231,
-         -0.4712, -0.3952,  0.2700, -1.0587,  0.8159, -0.1968,  0.3032,  0.6152,
-         -0.5459, -0.6519,  1.0849, -0.4709,  0.9782,  0.1879,  1.3738, -0.1276,
-          0.1331,  0.1525, -0.1283,  0.3631, -1.0888, -0.5879,  0.2783, -0.4793,
-         -0.3324, -0.6081,  0.3700,  0.4655,  1.3475,  0.1410, -0.1498, -0.3741,
-          0.1368,  1.0420,  0.5758,  0.2656, -0.0847, -0.2375, -0.3838, -0.2301,
-          1.0063,  0.0232,  0.0090,  0.1073,  0.0283, -0.7795, -0.3441, -0.1503,
-         -0.8287, -0.4480,  0.3172,  0.9594,  0.2103,  1.3085,  0.9361, -0.0460]])
+memory_gate: tensor([[0.4974],
+        [0.4664]])
+state: tensor([[ 1.2129,  0.4031, -0.6157,  0.2066, -0.2025, -1.6789,  0.9699,  1.4816,
+          2.0621, -0.9441, -0.4318,  0.5959, -0.7015,  0.5681, -1.4581, -1.9609,
+          0.7310, -1.7484, -0.2394,  0.3727, -0.2331,  0.2182, -0.7997,  0.8814,
+         -0.1919, -1.6838, -0.2992,  0.5613, -0.9185,  1.0294,  0.9571,  1.8441,
+         -1.6228,  0.0778, -0.6283, -1.6632, -0.4163,  0.3649,  0.4745,  0.7554,
+         -0.2729, -0.4720, -0.1071,  1.0832,  0.1559, -1.8100, -1.2345,  0.8710,
+         -0.4908,  1.0711, -0.2213, -0.2756, -0.0693,  1.0605,  0.4986,  0.0891,
+          0.0738, -0.5950, -1.4960, -0.0589,  1.2500, -2.7415,  1.1903,  0.7783],
+        [ 0.9897, -0.3846,  0.0251, -0.1531,  1.2091, -1.0570,  0.1531,  0.2342,
+          0.2452,  0.4838, -1.0563,  0.3670, -2.2843,  0.0566, -0.0880,  2.0686,
+         -0.7447,  1.7747, -1.8691, -0.4469, -0.2299, -0.7236,  2.7994,  1.1296,
+          1.4817, -0.2299,  0.0500, -0.5810,  0.5789,  0.7213, -0.4431,  0.8665,
+          0.7054,  0.3319, -0.6459,  0.2307, -0.5591, -0.2159,  1.2354, -0.1257,
+          0.1552,  1.6297,  1.1887, -0.9477,  0.8706, -2.1452,  0.3704, -2.2866,
+         -1.0785, -0.2734,  0.4142, -0.5656, -0.4220,  1.1968,  0.8583,  1.4575,
+          3.7075,  0.1530,  0.8736, -0.1210, -1.3485,  0.6142, -0.2549, -0.0930]])
+inputs: tensor([[ 1.0441,  0.4955, -0.5637,  0.2668, -0.1374, -1.6950,  0.8768,  1.5347,
+          2.2410, -0.9583, -0.4277,  0.3157, -0.6075,  0.5866, -1.3014, -2.1534,
+          0.7448, -1.5344, -0.2637,  0.2669, -0.2644,  0.2310, -0.9177,  0.9558,
+         -0.2920, -1.7242, -0.3125,  0.4522, -0.9010,  0.9509,  0.9012,  1.7839,
+         -1.6297,  0.1041, -0.7167, -1.8368, -0.3581,  0.4314,  0.3677,  0.7390,
+         -0.3507, -0.5248, -0.3036,  1.1705,  0.0578, -1.6456, -1.2507,  0.8503,
+         -0.6040,  1.0370, -0.2802, -0.4215,  0.0691,  1.0408,  0.5343,  0.1956,
+          0.2021, -0.6255, -1.5397, -0.0956,  1.3934, -2.6513,  1.1885,  0.7421],
+        [ 0.9562, -0.4665,  0.1342, -0.1861,  1.1580, -1.1211,  0.2740, -0.0257,
+          0.1327,  0.6968, -1.0863,  0.4981, -2.2829,  0.0154, -0.1509,  2.1804,
+         -0.6384,  1.8063, -1.9636, -0.3649, -0.2444, -0.6697,  2.8894,  1.1517,
+          1.3997, -0.1773, -0.0764, -0.4029,  0.7334,  0.6970, -0.5488,  0.7312,
+          0.7262,  0.3275, -0.7336,  0.1718, -0.6177, -0.2809,  1.1885, -0.1300,
+          0.3371,  1.6937,  1.2543, -0.8310,  0.7339, -2.2347,  0.3300, -2.2274,
+         -1.2775, -0.2667,  0.2267, -0.6806, -0.4419,  1.0858,  0.6707,  1.5792,
+          3.6976,  0.2188,  1.0513, -0.0687, -1.2674,  0.6933, -0.1675, -0.1238]])
+candidate_state: tensor([[-0.1590,  0.6417,  0.4514, -0.0067, -0.1037,  0.4301,  0.0781,  0.3605,
+          1.0938,  0.1472, -0.0419, -0.1411, -0.1218,  0.3846, -0.0910, -0.0183,
+          0.0812, -0.1700, -0.0562,  0.0583, -0.1338,  0.4375, -0.1265, -0.0093,
+          0.3824, -0.1598,  0.9801, -0.0266, -0.1243,  0.1192, -0.1670, -0.1534,
+          0.4643, -0.1685,  0.0544,  0.4374,  0.2765,  0.2999, -0.1037,  0.0101,
+         -0.0393,  0.6460,  1.7166, -0.1696, -0.1319,  0.4691,  0.2875, -0.0738,
+          0.0262,  0.1996, -0.1290,  0.1071,  0.2151, -0.1699, -0.1254, -0.0519,
+          0.3944, -0.0300,  0.1337,  0.6975,  0.3009,  0.7896, -0.0185, -0.0904],
+        [ 0.3354, -0.0612, -0.1100, -0.1697, -0.0513,  0.3800,  0.0179,  0.3734,
+         -0.1284,  0.3336,  0.1526,  0.1786, -0.1075, -0.1334, -0.0255, -0.0608,
+          0.2008,  0.4644,  0.0213,  0.2855, -0.0079, -0.0380, -0.0812, -0.1588,
+         -0.0687,  1.2409,  0.2792, -0.1697, -0.1627, -0.0707,  0.4760, -0.1009,
+         -0.1233,  0.5841, -0.0433, -0.1105,  0.2971,  0.3720, -0.1544,  0.2236,
+         -0.1660,  0.0425, -0.1697, -0.1670, -0.1686,  0.4091,  0.0755, -0.1503,
+          0.2026,  1.5644,  0.3894, -0.1290, -0.1691,  0.3581,  0.0516,  0.0185,
+          1.3578, -0.1652, -0.0299, -0.1451,  0.9987, -0.1681,  1.1776,  0.1063]])
+new_state: tensor([[ 0.5234,  0.5231, -0.0794,  0.0994, -0.1528, -0.6190,  0.5217,  0.9182,
+          1.5755, -0.3956, -0.2358,  0.2255, -0.4102,  0.4759, -0.7710, -0.9846,
+          0.4044, -0.9551, -0.1473,  0.2147, -0.1832,  0.3285, -0.4613,  0.4338,
+          0.0968, -0.9179,  0.3438,  0.2658, -0.5193,  0.5719,  0.3921,  0.8402,
+         -0.5739, -0.0460, -0.2852, -0.6075, -0.0681,  0.3322,  0.1839,  0.3808,
+         -0.1555,  0.0899,  0.8094,  0.4536,  0.0113, -0.6646, -0.4696,  0.3962,
+         -0.2309,  0.6331, -0.1749, -0.0833,  0.0736,  0.4421,  0.1850,  0.0182,
+          0.2349, -0.3110, -0.6769,  0.3212,  0.7730, -0.9668,  0.5828,  0.3417],
+        [ 0.6406, -0.2120, -0.0470, -0.1619,  0.5365, -0.2901,  0.0810,  0.3085,
+          0.0458,  0.4036, -0.4112,  0.2665, -1.1227, -0.0448, -0.0547,  0.9323,
+         -0.2401,  1.0755, -0.8603, -0.0560, -0.1114, -0.3577,  1.2622,  0.4421,
+          0.6544,  0.5550,  0.1723, -0.3615,  0.1831,  0.2987,  0.0474,  0.3502,
+          0.2631,  0.4665, -0.3243,  0.0486, -0.1022,  0.0978,  0.4937,  0.0607,
+         -0.0162,  0.7827,  0.4638, -0.5311,  0.3160, -0.7822,  0.2130, -1.1466,
+         -0.3949,  0.7073,  0.4010, -0.3326, -0.2870,  0.7492,  0.4278,  0.6896,
+          2.4536, -0.0168,  0.3914, -0.1339, -0.0960,  0.1967,  0.5095,  0.0134]])
+memory_gate: tensor([[0.4876],
+        [0.4413]])
+state: tensor([[ 1.2129,  0.4031, -0.6157,  0.2066, -0.2025, -1.6789,  0.9699,  1.4816,
+          2.0621, -0.9441, -0.4318,  0.5959, -0.7015,  0.5681, -1.4581, -1.9609,
+          0.7310, -1.7484, -0.2394,  0.3727, -0.2331,  0.2182, -0.7997,  0.8814,
+         -0.1919, -1.6838, -0.2992,  0.5613, -0.9185,  1.0294,  0.9571,  1.8441,
+         -1.6228,  0.0778, -0.6283, -1.6632, -0.4163,  0.3649,  0.4745,  0.7554,
+         -0.2729, -0.4720, -0.1071,  1.0832,  0.1559, -1.8100, -1.2345,  0.8710,
+         -0.4908,  1.0711, -0.2213, -0.2756, -0.0693,  1.0605,  0.4986,  0.0891,
+          0.0738, -0.5950, -1.4960, -0.0589,  1.2500, -2.7415,  1.1903,  0.7783],
+        [ 0.9897, -0.3846,  0.0251, -0.1531,  1.2091, -1.0570,  0.1531,  0.2342,
+          0.2452,  0.4838, -1.0563,  0.3670, -2.2843,  0.0566, -0.0880,  2.0686,
+         -0.7447,  1.7747, -1.8691, -0.4469, -0.2299, -0.7236,  2.7994,  1.1296,
+          1.4817, -0.2299,  0.0500, -0.5810,  0.5789,  0.7213, -0.4431,  0.8665,
+          0.7054,  0.3319, -0.6459,  0.2307, -0.5591, -0.2159,  1.2354, -0.1257,
+          0.1552,  1.6297,  1.1887, -0.9477,  0.8706, -2.1452,  0.3704, -2.2866,
+         -1.0785, -0.2734,  0.4142, -0.5656, -0.4220,  1.1968,  0.8583,  1.4575,
+          3.7075,  0.1530,  0.8736, -0.1210, -1.3485,  0.6142, -0.2549, -0.0930]])
+inputs: tensor([[-2.3872, -0.8464, -0.2666,  0.1670, -3.1275, -0.9195, -1.5355, -2.2661,
+         -1.5055,  0.3335, -0.6709,  0.2338, -0.1101, -2.5771,  0.9827, -0.1595,
+          0.2059, -1.1418, -0.9833, -1.1274,  1.9636,  0.5962, -3.0393, -0.9386,
+          0.6509, -0.5274, -0.6506, -0.0378, -0.2502, -0.3308, -1.3095,  0.6860,
+         -0.7108, -1.6129,  0.1166, -0.6883, -0.5421,  0.4645, -0.5057,  0.3769,
+          0.9206,  1.9810, -0.1476,  1.1632,  0.1184, -0.1305,  0.1315, -1.7424,
+          0.4584, -1.2811, -0.7317, -1.6019, -0.8354, -1.1399, -0.2660,  0.9884,
+          0.5785,  1.1119, -0.4254,  1.7774, -0.8208,  2.4929,  0.5673,  0.3579],
+        [-2.1316,  0.6077,  0.3801,  0.6372,  1.1363, -2.1141, -1.4309, -0.3112,
+          1.2800,  2.0065,  0.1235, -1.1237, -0.4501, -0.5040,  1.4071, -0.5665,
+          0.5142,  2.1725,  1.2120,  0.5296, -0.1668, -1.0583, -0.4101,  0.3373,
+         -1.0764,  0.9985, -1.0909,  0.4312, -0.0570, -0.4255,  0.3420, -0.8472,
+          0.0987,  1.3003, -0.0262, -0.4258, -0.6001,  0.1270, -1.7949, -0.3650,
+          1.0777, -0.7975, -0.0266, -0.5281, -0.9308, -0.0957,  0.2691, -0.6268,
+         -0.4830, -0.5803, -1.8473,  1.3362,  0.5132, -0.4421,  0.4847, -1.7187,
+         -2.5195,  0.2438, -0.4005,  0.8220,  1.3431, -0.8439, -0.1762,  0.2891]])
+candidate_state: tensor([[-0.1626, -0.1517, -0.0027, -0.1473,  0.0168, -0.1081, -0.0447,  0.8189,
+         -0.0772, -0.1650, -0.0793,  1.0014,  0.0370, -0.0687,  0.0842,  0.6851,
+          0.3496, -0.0580,  0.6123,  1.0990,  0.9406,  0.7264,  0.1340, -0.1647,
+         -0.0615, -0.0830,  0.3089, -0.0726, -0.1192, -0.0650, -0.0277,  0.5840,
+         -0.0775, -0.0684,  0.0293, -0.1301,  1.1095,  0.1035,  0.3338, -0.1364,
+         -0.0737,  0.0099, -0.1089,  0.2809, -0.1447, -0.1192, -0.1540, -0.1698,
+         -0.1542, -0.0371,  1.5455,  0.0616, -0.1659, -0.0729,  0.5791, -0.1619,
+         -0.1288, -0.1572, -0.1150, -0.1666,  0.6939,  0.1197,  1.2358,  0.1259],
+        [ 0.1607,  0.5820, -0.0487, -0.1205, -0.1677,  0.6594, -0.0831,  0.2811,
+         -0.1518,  0.9252, -0.1279, -0.1686,  0.1142, -0.1686,  0.3490,  0.0095,
+          0.1884,  0.3672, -0.1687, -0.0110,  0.0236,  0.0737, -0.0410, -0.1687,
+         -0.1343,  0.9679,  0.2171,  0.2333, -0.1553, -0.1518, -0.1674,  0.1367,
+          0.6359, -0.1692, -0.1293, -0.1699, -0.1559, -0.1309, -0.0685,  0.2403,
+          1.0870, -0.0939, -0.1498, -0.1088,  0.1696, -0.1658,  0.0892,  0.1686,
+          0.6205,  0.8729, -0.0095, -0.0999,  0.0090, -0.1476, -0.1575,  0.1634,
+          0.4864, -0.0158,  0.8171, -0.1685, -0.1005,  0.3914,  0.7604, -0.1646]])
+new_state: tensor([[ 5.0805e-01,  1.1884e-01, -3.0162e-01,  2.5244e-02, -9.0123e-02,
+         -8.7401e-01,  4.4999e-01,  1.1420e+00,  9.6588e-01, -5.4487e-01,
+         -2.5118e-01,  8.0369e-01, -3.2312e-01,  2.4182e-01, -6.6781e-01,
+         -6.0505e-01,  5.3557e-01, -8.8219e-01,  1.9703e-01,  7.4487e-01,
+          3.6836e-01,  4.7865e-01, -3.2123e-01,  3.4538e-01, -1.2507e-01,
+         -8.6354e-01,  1.2419e-02,  2.3649e-01, -5.0894e-01,  4.6858e-01,
+          4.5244e-01,  1.1984e+00, -8.3098e-01,  2.9141e-03, -2.9131e-01,
+         -8.7760e-01,  3.6560e-01,  2.3096e-01,  4.0240e-01,  2.9840e-01,
+         -1.7083e-01, -2.2507e-01, -1.0804e-01,  6.7208e-01,  1.8623e-03,
+         -9.4360e-01, -6.8084e-01,  3.3771e-01, -3.1833e-01,  5.0326e-01,
+          6.8406e-01, -1.0279e-01, -1.1877e-01,  4.7970e-01,  5.3984e-01,
+         -3.9499e-02, -3.0010e-02, -3.7066e-01, -7.8835e-01, -1.1408e-01,
+          9.6506e-01, -1.2754e+00,  1.2136e+00,  4.4400e-01],
+        [ 5.2649e-01,  1.5550e-01, -1.6131e-02, -1.3488e-01,  4.3983e-01,
+         -9.7947e-02,  2.1138e-02,  2.6039e-01,  2.3368e-02,  7.3042e-01,
+         -5.3756e-01,  6.7732e-02, -9.4417e-01, -6.9186e-02,  1.5616e-01,
+          9.1808e-01, -2.2334e-01,  9.8823e-01, -9.1897e-01, -2.0332e-01,
+         -8.8245e-02, -2.7806e-01,  1.2123e+00,  4.0418e-01,  5.7880e-01,
+          4.3935e-01,  1.4334e-01, -1.2602e-01,  1.6867e-01,  2.3343e-01,
+         -2.8904e-01,  4.5873e-01,  6.6654e-01,  5.1874e-02, -3.5725e-01,
+          6.8609e-03, -3.3381e-01, -1.6843e-01,  5.0684e-01,  7.8820e-02,
+          6.7583e-01,  6.6662e-01,  4.4082e-01, -4.7900e-01,  4.7893e-01,
+         -1.0392e+00,  2.1325e-01, -9.1477e-01, -1.2921e-01,  3.6706e-01,
+          1.7744e-01, -3.0539e-01, -1.8116e-01,  4.4559e-01,  2.9074e-01,
+          7.3441e-01,  1.9078e+00,  5.8658e-02,  8.4203e-01, -1.4752e-01,
+         -6.5119e-01,  4.8972e-01,  3.1239e-01, -1.3303e-01]])
 =============================== warnings summary ===============================
 ../../.local/lib/python3.10/site-packages/torch/__init__.py:1144
   /home/kasinadhsarma/.local/lib/python3.10/site-packages/torch/__init__.py:1144: UserWarning: torch.set_default_tensor_type() is deprecated as of PyTorch 2.1, please use torch.set_default_dtype() and torch.set_default_device() as alternatives. (Triggered internally at ../torch/csrc/tensor/python_tensor.cpp:432.)
@@ -2111,6 +2069,12 @@ tests/test_consciousness.py::TestConsciousnessModel::test_model_state_update
 tests/test_consciousness.py::TestConsciousnessModel::test_model_attention_weights
   /home/kasinadhsarma/experiment/cognition-l3-experiment/models/consciousness_model.py:85: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
     inputs = {k: torch.tensor(v, dtype=torch.float32) for k, v in inputs.items()}
+
+tests/test_consciousness.py::TestConsciousnessModel::test_model_forward_pass
+tests/test_consciousness.py::TestConsciousnessModel::test_model_state_update
+tests/test_consciousness.py::TestConsciousnessModel::test_model_attention_weights
+  /home/kasinadhsarma/experiment/cognition-l3-experiment/models/consciousness_model.py:119: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+    {k: torch.tensor(v, dtype=torch.float32) for k, v in inputs.items()},
 
 tests/test_consciousness.py::TestConsciousnessModel::test_model_state_update
 tests/test_consciousness.py::TestConsciousnessModel::test_model_attention_weights
@@ -2146,7 +2110,7 @@ tests/unit/state/test_consciousness_state_management.py::TestConsciousnessStateM
 FAILED tests/test_consciousness.py::TestConsciousnessModel::test_model_forward_pass
 FAILED tests/test_consciousness.py::TestConsciousnessModel::test_model_state_update
 FAILED tests/test_consciousness.py::TestConsciousnessModel::test_model_attention_weights
-FAILED tests/test_environment.py::EnvironmentTests::test_core_imports - Runti...
+FAILED tests/test_environment.py::EnvironmentTests::test_core_imports - Asser...
 FAILED tests/test_environment.py::EnvironmentTests::test_framework_versions
 FAILED tests/test_environment.py::EnvironmentTests::test_hardware_detection
 FAILED tests/unit/attention/test_attention.py::TestAttentionMechanisms::test_scaled_dot_product
@@ -2157,11 +2121,17 @@ FAILED tests/unit/integration/test_cognitive_integration.py::TestCognitiveProces
 FAILED tests/unit/integration/test_cognitive_integration.py::TestCognitiveProcessIntegration::test_modality_specific_processing
 FAILED tests/unit/integration/test_cognitive_integration.py::TestCognitiveProcessIntegration::test_integration_stability
 FAILED tests/unit/integration/test_cognitive_integration.py::TestCognitiveProcessIntegration::test_cognitive_integration
+FAILED tests/unit/integration/test_state_management.py::TestConsciousnessStateManager::test_state_updates
+FAILED tests/unit/integration/test_state_management.py::TestConsciousnessStateManager::test_rl_optimization
 FAILED tests/unit/integration/test_state_management.py::TestConsciousnessStateManager::test_adaptive_gating
 FAILED tests/unit/memory/test_integration.py::TestInformationIntegration::test_phi_metric_computation
 FAILED tests/unit/memory/test_integration.py::TestInformationIntegration::test_information_flow
 FAILED tests/unit/memory/test_integration.py::TestInformationIntegration::test_entropy_calculations
 FAILED tests/unit/memory/test_integration.py::TestInformationIntegration::test_memory_integration
+FAILED tests/unit/memory/test_memory.py::TestMemoryComponents::test_memory_sequence_processing
+FAILED tests/unit/memory/test_memory.py::TestMemoryComponents::test_context_aware_gating
+FAILED tests/unit/memory/test_memory.py::TestMemoryComponents::test_memory_retention
+FAILED tests/unit/memory/test_memory.py::TestMemoryComponents::test_working_memory
 FAILED tests/unit/memory/test_memory_components.py::TestGRUCell::test_gru_state_updates
 FAILED tests/unit/memory/test_memory_components.py::TestGRUCell::test_gru_reset_gate
 FAILED tests/unit/memory/test_memory_components.py::TestWorkingMemory::test_sequence_processing
@@ -2169,8 +2139,4 @@ FAILED tests/unit/memory/test_memory_components.py::TestWorkingMemory::test_memo
 FAILED tests/unit/state/test_consciousness_state_management.py::TestConsciousnessStateManager::test_state_updates
 FAILED tests/unit/state/test_consciousness_state_management.py::TestConsciousnessStateManager::test_rl_optimization
 FAILED tests/unit/state/test_consciousness_state_management.py::TestConsciousnessStateManager::test_adaptive_gating
-ERROR tests/unit/memory/test_memory.py::TestMemoryComponents::test_memory_sequence_processing
-ERROR tests/unit/memory/test_memory.py::TestMemoryComponents::test_context_aware_gating
-ERROR tests/unit/memory/test_memory.py::TestMemoryComponents::test_information_integration
-ERROR tests/unit/memory/test_memory.py::TestMemoryComponents::test_memory_retention
-============= 26 failed, 15 passed, 24 warnings, 4 errors in 2.05s =============
+================== 32 failed, 15 passed, 27 warnings in 1.34s ==================

@@ -47,44 +47,23 @@ class GRUCell(nn.Module):
         return h_new
 
 class WorkingMemory(nn.Module):
-    """
-    Working memory component with context-aware gating for consciousness.
-    """
-    def __init__(self, input_dim: int, hidden_dim: int, dropout_rate: float):
+    def __init__(self, input_dim, hidden_dim):
         super().__init__()
         self.hidden_dim = hidden_dim
-        self.dropout_rate = dropout_rate
-        self.lstm = nn.LSTMCell(input_dim, hidden_dim)
-        self.dropout = nn.Dropout(dropout_rate)
-
-    def forward(self, inputs, initial_state=None, mask=None, deterministic=True):
-        """Process sequence through working memory."""
-        batch_size = inputs.size(0)
-        seq_len = inputs.size(1)
-        device = inputs.device
-
-        if initial_state is None:
-            h = torch.zeros(batch_size, self.hidden_dim, device=device)
-            c = torch.zeros(batch_size, self.hidden_dim, device=device)
-        else:
-            h = initial_state
-            c = torch.zeros_like(initial_state)
-
-        outputs = []
+        self.input_projection = nn.Linear(input_dim, hidden_dim)
+        self.gru = nn.GRU(hidden_dim, hidden_dim)
+        self.layer_norm = nn.LayerNorm(hidden_dim)
         
-        # Process sequence
-        for t in range(seq_len):
-            # Apply dropout if training
-            if not deterministic:
-                x = self.dropout(inputs[:, t])
-            else:
-                x = inputs[:, t]
-                
-            h, c = self.lstm(x, (h, c))
-            outputs.append(h)
-
-        outputs = torch.stack(outputs, dim=1)
-        return outputs, (h, c)
+    def forward(self, x, prev_state=None):
+        # Project input to hidden dimension
+        x = self.input_projection(x)
+        x = self.layer_norm(x)
+        
+        if prev_state is None:
+            prev_state = torch.zeros((1, x.size(0), self.hidden_dim), device=x.device)
+            
+        output, new_state = self.gru(x.unsqueeze(0), prev_state)
+        return output.squeeze(0), new_state
 
 class InformationIntegration(nn.Module):
     """
