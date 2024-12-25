@@ -58,7 +58,8 @@ class TestConsciousnessModel(ConsciousnessTestBase):
 
         # Run forward pass
         with torch.no_grad() if deterministic else torch.enable_grad():
-            new_state, metrics = model(sample_input, deterministic=deterministic)
+            state = torch.zeros(sample_input['attention'].shape[0], model.hidden_dim)
+            new_state, metrics = model(sample_input, initial_state=state, deterministic=deterministic)
 
         # Check output structure and shapes
         batch_size = next(iter(sample_input.values())).shape[0]
@@ -99,7 +100,7 @@ class TestConsciousnessModel(ConsciousnessTestBase):
         model.eval() if deterministic else model.train()
         with torch.no_grad() if deterministic else torch.enable_grad():
             state = torch.zeros(sample_input['attention'].shape[0], model.hidden_dim)
-            new_state, metrics = model(sample_input, state=state, deterministic=deterministic)
+            new_state, metrics = model(sample_input, initial_state=state, deterministic=deterministic)
         assert new_state is not None
         assert 'memory_state' in metrics
 
@@ -109,7 +110,7 @@ class TestConsciousnessModel(ConsciousnessTestBase):
         model.eval() if deterministic else model.train()
         with torch.no_grad() if deterministic else torch.enable_grad():
             state = torch.zeros(sample_input['attention'].shape[0], model.hidden_dim)
-            _, metrics = model(sample_input, state=state, deterministic=deterministic)
+            _, metrics = model(sample_input, initial_state=state, deterministic=deterministic)
         attention_weights = metrics['attention_weights']
         assert attention_weights.ndim == 4  # (batch, heads, seq, seq)
         assert torch.all(attention_weights >= 0)

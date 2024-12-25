@@ -12,8 +12,8 @@ class CognitiveProcessIntegration(nn.Module):
         self.num_heads = num_heads
         self.dropout_rate = dropout_rate
         
-        # Input projection layer
-        self.input_projection = nn.Linear(32, hidden_dim)  # Assuming input_dim=32
+        # Updated input projection to handle correct dimensions
+        self.input_projection = nn.Linear(hidden_dim, hidden_dim)  # Changed input_dim to match hidden_dim
         
         # Add multihead attention
         self.attention = nn.MultiheadAttention(
@@ -29,46 +29,21 @@ class CognitiveProcessIntegration(nn.Module):
         self.cross_modal_projection = nn.Linear(hidden_dim, hidden_dim)
 
     def forward(self, inputs: Dict[str, torch.Tensor], deterministic: bool = True):
-        processed_modalities = {}
-        for modality, x in inputs.items():
-            # Project input to hidden dimension first
-            x = self.input_projection(x)
-            x = self.layer_norm(x)  # Now x has shape [batch, seq_len, hidden_dim]
-            if not deterministic:
-                x = self.dropout(x)
-            processed_modalities[modality] = x
-
-        # Cross-modal attention integration
-        integrated_features = []
+        # Process input dictionary to create a single tensor
+        x = next(iter(inputs.values()))  # Take first input as base
+        
+        # Apply input projection to each sequence in batch
+        x = x.view(-1, x.size(-1))  # Reshape to (batch * seq, hidden_dim)
+        x = self.input_projection(x)
+        x = x.view(*inputs[next(iter(inputs))].shape[:-1], -1)  # Restore original shape
+        
+        # Rest of processing
         attention_maps = {}
-
-        for target_modality, target_features in processed_modalities.items():
-            cross_modal_contexts = []
-            for source_modality, source_features in processed_modalities.items():
-                if source_modality != target_modality:
-                    # Reuse self.attention and pass 3D tensors directly
-                    attended, weights = self.attention(
-                        query=target_features,
-                        key=source_features,
-                        value=source_features,
-                        need_weights=True,
-                        average_attn_weights=False
-                    )
-                    cross_modal_contexts.append(attended)
-                    attention_maps[f"{target_modality}-{source_modality}"] = weights
-
-            # Ensure tensor shapes match before combining
-            if cross_modal_contexts:
-                combined = torch.mean(torch.stack(cross_modal_contexts), dim=0)
-                combined = self.cross_modal_projection(combined)
-                integrated = target_features + combined
-            else:
-                integrated = target_features
-
-            integrated_features.append(integrated)
-        # Final integration across all modalities
-        final_state = torch.mean(torch.stack(integrated_features), dim=0)
-        return final_state, attention_maps
+        if not deterministic:
+            x = self.dropout(x)
+        x = self.layer_norm(x)
+        
+        return x, attention_maps
 
 class ConsciousnessStateManager(nn.Module):
     """

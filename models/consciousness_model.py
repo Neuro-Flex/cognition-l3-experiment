@@ -73,7 +73,7 @@ class ConsciousnessModel(nn.Module):
             batch_first=True
         )
 
-    def forward(self, inputs, state=None, deterministic=True, consciousness_threshold=0.5):
+    def forward(self, inputs, state=None, initial_state=None, deterministic=True, consciousness_threshold=0.5):
         """
         Process inputs through consciousness architecture.
         """
@@ -103,7 +103,7 @@ class ConsciousnessModel(nn.Module):
         memory_output, memory_state = self.working_memory(
             workspace_output,
             deterministic=deterministic,
-            initial_state=state
+            initial_state=initial_state
         )
         metrics['memory_state'] = memory_state
 
@@ -168,3 +168,40 @@ class ConsciousnessModel(nn.Module):
             'num_states': 4,
             'dropout_rate': 0.1
         }
+
+class WorkingMemory(nn.Module):
+    def __init__(self, input_dim, hidden_dim, dropout_rate):
+        super().__init__()
+        self.input_projection = nn.Linear(input_dim, hidden_dim)
+        self.gru = nn.GRU(hidden_dim, hidden_dim, batch_first=True)
+        self.layer_norm = nn.LayerNorm(hidden_dim)
+        self.dropout = nn.Dropout(dropout_rate)
+        self.hidden_dim = hidden_dim
+
+    def forward(self, inputs, deterministic=False, initial_state=None):
+        # Project input
+        projected = self.input_projection(inputs)
+        
+        # Get batch size from input
+        batch_size = projected.size(0)
+        
+        # Prepare initial state for GRU
+        if initial_state is not None:
+            # Reshape to match GRU's expected hidden state shape (num_layers, batch_size, hidden_dim)
+            initial_state = initial_state.view(batch_size, self.hidden_dim)
+            initial_state = initial_state.unsqueeze(0)
+            # Expand to match the expected batch size
+            initial_state = initial_state.expand(1, batch_size, self.hidden_dim)
+        else:
+            # Initialize with zeros if no state provided
+            initial_state = torch.zeros(1, batch_size, self.hidden_dim, device=inputs.device)
+            
+        # Pass through GRU
+        memory_output, memory_state = self.gru(projected, initial_state)
+        
+        # Apply layer normalization and dropout
+        if not deterministic:
+            memory_output = self.dropout(memory_output)
+        memory_output = self.layer_norm(memory_output)
+        
+        return memory_output, memory_state
