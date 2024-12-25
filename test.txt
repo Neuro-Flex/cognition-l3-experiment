@@ -2,35 +2,45 @@
 platform linux -- Python 3.10.12, pytest-8.3.4, pluggy-1.5.0
 rootdir: /home/kasinadhsarma/experiment/cognition-l3-experiment
 plugins: cov-6.0.0, anyio-4.7.0
-collected 47 items
+collected 87 items
 
-tests/test_consciousness.py ......                                       [ 12%]
-tests/test_environment.py ..s..                                          [ 23%]
-tests/unit/attention/test_attention.py ....                              [ 31%]
-tests/unit/attention/test_attention_mechanisms.py ....                   [ 40%]
-tests/unit/integration/test_cognitive_integration.py ....                [ 48%]
-tests/unit/integration/test_state_management.py ....                     [ 57%]
-tests/unit/memory/test_integration.py ....                               [ 65%]
-tests/unit/memory/test_memory.py .......                                 [ 80%]
-tests/unit/memory/test_memory_components.py ....                         [ 89%]
-tests/unit/state/test_consciousness_state_management.py .....            [100%]
+tests/benchmarks/test_arc_reasoning.py .......                           [  8%]
+tests/benchmarks/test_bigbench_reasoning.py .....                        [ 13%]
+tests/test_consciousness.py ..........                                   [ 25%]
+tests/test_environment.py .....s..                                       [ 34%]
+tests/unit/attention/test_attention.py ......                            [ 41%]
+tests/unit/attention/test_attention_mechanisms.py .......                [ 49%]
+tests/unit/integration/test_cognitive_integration.py ......              [ 56%]
+tests/unit/integration/test_state_management.py ......                   [ 63%]
+tests/unit/memory/test_integration.py ......                             [ 70%]
+tests/unit/memory/test_memory.py ..........                              [ 81%]
+tests/unit/memory/test_memory_components.py ..........                   [ 93%]
+tests/unit/state/test_consciousness_state_management.py ......           [100%]
 
 =============================== warnings summary ===============================
 ../../.local/lib/python3.10/site-packages/torch/__init__.py:1144
   /home/kasinadhsarma/.local/lib/python3.10/site-packages/torch/__init__.py:1144: UserWarning: torch.set_default_tensor_type() is deprecated as of PyTorch 2.1, please use torch.set_default_dtype() and torch.set_default_device() as alternatives. (Triggered internally at ../torch/csrc/tensor/python_tensor.cpp:432.)
     _C._set_default_tensor_type(t)
 
-tests/test_consciousness.py::TestConsciousnessModel::test_model_forward_pass
-tests/test_consciousness.py::TestConsciousnessModel::test_model_state_update
-tests/test_consciousness.py::TestConsciousnessModel::test_model_attention_weights
-  /home/kasinadhsarma/experiment/cognition-l3-experiment/models/consciousness_model.py:85: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+tests/benchmarks/test_arc_reasoning.py: 7 warnings
+tests/benchmarks/test_bigbench_reasoning.py: 5 warnings
+tests/test_consciousness.py: 7 warnings
+  /home/kasinadhsarma/experiment/cognition-l3-experiment/models/consciousness_model.py:126: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
     inputs = {k: torch.tensor(v, dtype=torch.float32) for k, v in inputs.items()}
 
-tests/test_consciousness.py::TestConsciousnessModel::test_model_forward_pass
-tests/test_consciousness.py::TestConsciousnessModel::test_model_state_update
-tests/test_consciousness.py::TestConsciousnessModel::test_model_attention_weights
-  /home/kasinadhsarma/experiment/cognition-l3-experiment/models/consciousness_model.py:119: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+tests/benchmarks/test_arc_reasoning.py: 7 warnings
+tests/benchmarks/test_bigbench_reasoning.py: 5 warnings
+tests/test_consciousness.py: 7 warnings
+  /home/kasinadhsarma/experiment/cognition-l3-experiment/models/consciousness_model.py:160: UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
     {k: torch.tensor(v, dtype=torch.float32) for k, v in inputs.items()},
 
+tests/test_consciousness.py::TestConsciousnessModel::test_model_save_load
+  /home/kasinadhsarma/experiment/cognition-l3-experiment/tests/test_consciousness.py:171: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+    loaded_model.load_state_dict(torch.load(model_path))
+
+tests/unit/memory/test_memory.py::TestMemoryComponents::test_memory_save_load
+  /home/kasinadhsarma/experiment/cognition-l3-experiment/tests/unit/memory/test_memory.py:221: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+    loaded_memory.load_state_dict(torch.load(model_path))
+
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-================== 46 passed, 1 skipped, 7 warnings in 3.52s ===================
+================== 86 passed, 1 skipped, 41 warnings in 5.70s ==================
