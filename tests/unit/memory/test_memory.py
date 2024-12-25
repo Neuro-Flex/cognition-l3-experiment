@@ -134,3 +134,34 @@ class TestMemoryComponents(ConsciousnessTestBase):
 
         # Final state should capture pattern information
         assert torch.any(torch.abs(final_state) > 0.1)  # Non-zero activations
+
+    def test_working_memory(self, working_memory, device, batch_size, seq_length, hidden_dim):
+        """Test WorkingMemory component."""
+        inputs = torch.randn(batch_size, seq_length, hidden_dim, device=device)
+        initial_state = torch.zeros(batch_size, hidden_dim, device=device)
+
+        output, final_state = working_memory(inputs, initial_state, deterministic=True)
+
+        # Verify shapes
+        self.assert_output_shape(output, (batch_size, seq_length, hidden_dim))
+        self.assert_output_shape(final_state, (batch_size, hidden_dim))
+
+    def test_information_integration(self, info_integration, device, batch_size, seq_length, hidden_dim):
+        """Test InformationIntegration component."""
+        inputs = torch.randn(batch_size, seq_length, hidden_dim, device=device)
+
+        output, phi = info_integration(inputs, deterministic=True)
+
+        # Verify shapes
+        self.assert_output_shape(output, (batch_size, seq_length, hidden_dim))
+        assert phi.shape == (batch_size,)
+
+    def test_gru_cell(self, gru_cell, device, batch_size, hidden_dim):
+        """Test GRUCell component."""
+        inputs = torch.randn(batch_size, hidden_dim, device=device)
+        hidden_state = torch.zeros(batch_size, hidden_dim, device=device)
+
+        new_hidden_state = gru_cell(inputs, hidden_state)
+
+        # Verify shapes
+        self.assert_output_shape(new_hidden_state, (batch_size, hidden_dim))
