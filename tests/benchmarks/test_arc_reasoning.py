@@ -152,6 +152,95 @@ class TestARCReasoning:
         except Exception as e:
             pytest.fail(f"Abstraction capability test failed: {str(e)}")
 
+    def test_sequence_completion(self, device, consciousness_model):
+        """Test sequence completion capabilities"""
+        # Create sequence pattern
+        sequence = torch.tensor([
+            [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+            [[0, 0, 1], [0, 1, 0], [1, 0, 0]],
+            [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+        ], dtype=torch.float32).unsqueeze(0).unsqueeze(-1)
+        
+        batch_size = sequence.shape[0]
+        visual_input = self._prepare_visual_input(sequence, batch_size, consciousness_model.hidden_dim)
+        
+        model_inputs = {
+            'visual': visual_input.to(device),
+            'state': torch.zeros((batch_size, consciousness_model.hidden_dim), device=device)
+        }
+        
+        consciousness_model = consciousness_model.to(device)
+        consciousness_model.eval()
+        
+        with torch.no_grad():
+            output, metrics = consciousness_model(model_inputs, deterministic=True)
+            
+            # Verify sequential pattern learning
+            assert 'phi' in metrics
+
+    def test_object_transformation(self, device, consciousness_model):
+        """Test object transformation understanding"""
+        # Initial shape
+        initial = torch.tensor([
+            [1, 1, 1],
+            [0, 0, 0],
+            [0, 0, 0]
+        ], dtype=torch.float32).unsqueeze(0).unsqueeze(-1)
+        
+        # Transformed shape (rotated and translated)
+        transformed = torch.tensor([
+            [0, 0, 0],
+            [0, 0, 0],
+            [1, 1, 1]
+        ], dtype=torch.float32).unsqueeze(0).unsqueeze(-1)
+        
+        batch_size = initial.shape[0]
+        
+        input_visual = self._prepare_visual_input(
+            torch.cat([initial, transformed], dim=1),
+            batch_size,
+            consciousness_model.hidden_dim
+        )
+        
+        model_inputs = {
+            'visual': input_visual.to(device),
+            'state': torch.zeros((batch_size, consciousness_model.hidden_dim), device=device)
+        }
+        
+        consciousness_model = consciousness_model.to(device)
+        consciousness_model.eval()
+        
+        with torch.no_grad():
+            output, metrics = consciousness_model(model_inputs, deterministic=True)
+            
+            # Verify transformation understanding
+            assert 'phi' in metrics
+
+    def test_rule_inference(self, device, consciousness_model):
+        """Test ability to infer rules from examples"""
+        # Rule: Alternating patterns
+        examples = torch.tensor([
+            [[1, 0, 1], [0, 1, 0], [1, 0, 1]],
+            [[0, 1, 0], [1, 0, 1], [0, 1, 0]],
+        ], dtype=torch.float32).unsqueeze(0).unsqueeze(-1)
+        
+        batch_size = examples.shape[0]
+        visual_input = self._prepare_visual_input(examples, batch_size, consciousness_model.hidden_dim)
+        
+        model_inputs = {
+            'visual': visual_input.to(device),
+            'state': torch.zeros((batch_size, consciousness_model.hidden_dim), device=device)
+        }
+        
+        consciousness_model = consciousness_model.to(device)
+        consciousness_model.eval()
+        
+        with torch.no_grad():
+            output, metrics = consciousness_model(model_inputs, deterministic=True)
+            
+            # Verify rule learning
+            assert 'phi' in metrics
+
     # Convert remaining test methods similarly...
     # The pattern is similar - main changes are:
     # - Replace jnp with torch

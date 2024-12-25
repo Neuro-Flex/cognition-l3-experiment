@@ -73,6 +73,11 @@ class ConsciousnessModel(nn.Module):
             batch_first=True
         )
 
+        # Add components for ARC reasoning
+        self.sequence_predictor = nn.Linear(self.hidden_dim, self.hidden_dim)
+        self.transformation_net = nn.Linear(self.hidden_dim * 2, self.hidden_dim)
+        self.rule_encoder = nn.Linear(self.hidden_dim, self.hidden_dim)
+
     def forward(self, inputs, state=None, initial_state=None, deterministic=True, consciousness_threshold=0.5):
         """
         Process inputs through consciousness architecture.
@@ -140,6 +145,29 @@ class ConsciousnessModel(nn.Module):
         
         # Store attention map
         attention_maps['self_attention'] = attention_weights
+
+        # Add sequence prediction
+        sequence_pred = self.sequence_predictor(new_state)
+        
+        # Add transformation understanding
+        if inputs['visual'].shape[1] > 1:  # If we have a sequence
+            trans_input = torch.cat([new_state[:,0], new_state[:,1]], dim=1)
+            trans_vec = self.transformation_net(trans_input)
+        else:
+            trans_vec = torch.zeros_like(new_state[:,0])
+            
+        # Add rule learning
+        rule_embed = self.rule_encoder(new_state.mean(dim=1))
+        
+        metrics.update({
+            'sequence_predictions': sequence_pred,
+            'transformation_vectors': trans_vec,
+            'rule_embeddings': rule_embed,
+            'rule_confidence': torch.sigmoid(rule_embed.norm(dim=-1, keepdim=True))
+        })
+
+        # Ensure new_state has shape (batch_size, hidden_dim)
+        new_state = new_state.mean(dim=1)
 
         return new_state, {
             'attention_weights': attention_weights,

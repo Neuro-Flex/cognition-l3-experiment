@@ -33,7 +33,8 @@ class TestConsciousnessModel(ConsciousnessTestBase):
             'attention': self.create_inputs(seed_val, batch_size, seq_length, hidden_dim),
             'memory': self.create_inputs(seed_val, batch_size, seq_length, hidden_dim),
             'reasoning': self.create_inputs(seed_val, batch_size, seq_length, hidden_dim),
-            'emotion': self.create_inputs(seed_val, batch_size, seq_length, hidden_dim)
+            'emotion': self.create_inputs(seed_val, batch_size, seq_length, hidden_dim),
+            'visual': self.create_inputs(seed_val, batch_size, seq_length, hidden_dim)  # Added visual input
         }
         return inputs
 
@@ -63,7 +64,7 @@ class TestConsciousnessModel(ConsciousnessTestBase):
 
         # Check output structure and shapes
         batch_size = next(iter(sample_input.values())).shape[0]
-        assert new_state.shape == (batch_size, 8, model.hidden_dim)  # Updated to match actual output shape
+        assert new_state.shape == (batch_size, model.hidden_dim)  # Model outputs single state vector per batch
 
         # Verify metrics
         assert all(k in metrics for k in ['memory_state', 'attention_weights', 'phi', 'attention_maps'])
@@ -118,3 +119,4 @@ class TestConsciousnessModel(ConsciousnessTestBase):
 
 if __name__ == '__main__':
     pytest.main([__file__])
+

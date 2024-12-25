@@ -66,7 +66,10 @@ class TestBigBenchReasoning:
 
                     # Process through consciousness model
                     output, metrics = consciousness_model(
-                        {'textual': input_embedding},
+                        {
+                            'textual': input_embedding,
+                            'visual': torch.zeros(1, 64, 512, device=device)  # Added dummy 'visual' input
+                        },
                         deterministic=True
                     )
 
@@ -116,9 +119,12 @@ class TestBigBenchReasoning:
                         state = torch.zeros(1, 1, consciousness_model.hidden_dim, device=device)
 
                     output, metrics = consciousness_model(
-                        {'textual': input_embedding,
-                         'state': state},
-                        deterministic=True,
+                        {
+                            'textual': input_embedding,
+                            'visual': torch.zeros(1, 64, 512, device=device),  # Added dummy 'visual' input with matching sequence length
+                            'state': state
+                        consciousness_threshold=0.1 + i*0.3  # Increase threshold with complexity
+                    )
                         consciousness_threshold=0.1 + i*0.3  # Increase threshold with complexity
                     )
                     phi_values.append(metrics['phi'])
@@ -154,8 +160,11 @@ class TestBigBenchReasoning:
                     base_state = torch.randn(1, 1, consciousness_model.hidden_dim, device=device)
 
                     output, metrics = consciousness_model(
-                        {'textual': task_embedding,
-                         'state': base_state},
+                        {
+                            'textual': task_embedding,
+                            'visual': torch.zeros(1, 64, 512, device=device),  # Added dummy 'visual' input
+                            'state': base_state
+                        },
                         consciousness_threshold=threshold,
                         deterministic=True
                     )
