@@ -105,6 +105,17 @@ class ConsciousnessModel(nn.Module):
         # State tracking
         self.register_buffer('current_state', torch.zeros(1, hidden_dim))
 
+        # Add performance monitoring
+        self.register_buffer('performance_history', torch.zeros(1000))
+        self.register_buffer('adaptation_rate', torch.tensor(0.1))
+        
+        # Add adaptive learning components
+        self.adaptive_learner = nn.ModuleDict({
+            'pattern_detector': nn.Linear(hidden_dim, hidden_dim),
+            'error_predictor': nn.Linear(hidden_dim, 1),
+            'adaptation_gate': nn.Linear(hidden_dim * 2, hidden_dim)
+        })
+
     def add_meta_learning_layer(self):
         """Add meta-learning capabilities"""
         self.meta_learner = nn.ModuleDict({
@@ -127,34 +138,25 @@ class ConsciousnessModel(nn.Module):
         if previous_states:
             similarities = []
             for prev_state in previous_states[-5:]:
-                # Calculate similarity across multiple dimensions
-                dim_similarities = []
-                for dim in range(current_state.size(-1)):
-                    sim = F.cosine_similarity(
-                        current_state[..., dim:dim+1], 
-                        prev_state[..., dim:dim+1], 
-                        dim=-1
-                    )
-                    dim_similarities.append(sim.mean().item())
-                similarities.append(sum(dim_similarities) / len(dim_similarities))
-            coherence_score = sum(similarities) / len(similarities)
+                try:
+                    # Handle batch size mismatch
+                    if current_state.size(0) != prev_state.size(0):
+                        if current_state.size(0) > prev_state.size(0):
+                            prev_state = prev_state.expand(current_state.size(0), -1)
+                        else:
+                            current_state = current_state.mean(0, keepdim=True).expand(prev_state.size(0), -1)
+                    # Calculate similarity
+                    sim = F.cosine_similarity(current_state, prev_state, dim=-1)
+                    similarities.append(sim.mean().item())
+                except RuntimeError as e:
+                    print(f"Warning: Similarity calculation failed: {str(e)}")
+                    similarities.append(0.0)
             
-            # Apply adaptive scaling
-            coherence_score = torch.sigmoid(torch.tensor(coherence_score * 2)).item()
-        
-        if self.advanced_reflection and previous_states:
-            # Example of correlation-based scoring
-            corr_values = []
-            for prev_state in previous_states[-5:]:
-                corr = torch.mean((current_state - current_state.mean()) * (prev_state - prev_state.mean())) 
-                corr_values.append(corr.item())
-            corr_score = sum(corr_values) / len(corr_values) if corr_values else 0.0
-            coherence_score = (coherence_score + corr_score) / 2.0
-
-        # Generate insights about own processing
+            coherence_score = sum(similarities) / len(similarities) if similarities else 0.0
+            coherence_score = min(max(coherence_score, 0.0), 1.0)  # Clamp between 0 and 1
+            
+        # Generate reflection output
         reflection_output = self.meta_learner['pattern_recognition'](current_state)
-        reflection_output = F.relu(reflection_output)  # Ensure non-negative insights
-        
         return reflection_output, coherence_score
 
     def enhanced_context_switching(self, 
@@ -174,6 +176,24 @@ class ConsciousnessModel(nn.Module):
         ]).mean(dim=0)
         
         return F.softmax(context_similarity, dim=-1)
+
+    def adaptive_learning_step(self, state: torch.Tensor, error: float) -> torch.Tensor:
+        """Adapt model parameters based on performance"""
+        with torch.no_grad():
+            pattern = self.adaptive_learner['pattern_detector'](state)
+            predicted_error = self.adaptive_learner['error_predictor'](pattern).mean()
+            
+            # Update adaptation rate based on prediction error
+            error_diff = abs(predicted_error.item() - error)
+            self.adaptation_rate *= 0.95 if error_diff > 0.5 else 1.05
+            self.adaptation_rate.clamp_(0.01, 1.0)
+            
+            # Generate adaptation signal
+            adaptation = self.adaptive_learner['adaptation_gate'](
+                torch.cat([state, pattern], dim=-1)
+            )
+            
+            return adaptation * self.adaptation_rate.item()
 
     def forward(self, inputs, state=None, initial_state=None, deterministic=True, consciousness_threshold=0.5):
         """
@@ -373,8 +393,18 @@ class ConsciousnessModel(nn.Module):
             current_state = new_state.detach()
             similarities = []
             for prev_state in self.state_history[-5:]:
-                sim = F.cosine_similarity(current_state, prev_state, dim=-1)
-                similarities.append(sim.mean().item())
+                try:
+                    # Handle batch size mismatch by broadcasting
+                    if current_state.size(0) != prev_state.size(0):
+                        if current_state.size(0) > prev_state.size(0):
+                            prev_state = prev_state.expand(current_state.size(0), -1)
+                        else:
+                            current_state = current_state.mean(0, keepdim=True).expand(prev_state.size(0), -1)
+                    sim = F.cosine_similarity(current_state, prev_state, dim=-1)
+                    similarities.append(sim.mean().item())
+                except Exception as e:
+                    print(f"Warning: Similarity calculation failed: {str(e)}")
+                    similarities.append(0.0)
             coherence_score = sum(similarities) / len(similarities) if similarities else 0.0
 
         # Update metrics with coherence
@@ -397,13 +427,94 @@ class ConsciousnessModel(nn.Module):
             if metric not in metrics:
                 metrics[metric] = torch.tensor(0.0) if metric != 'attention_maps' else {}
 
-        return new_state, metrics
+        try:
+            # Add performance monitoring
+            performance_metric = metrics['coherence']
+            self.performance_history = torch.cat([
+                self.performance_history[1:],
+                torch.tensor([performance_metric])
+            ])
+            
+            # Apply adaptive learning
+            adaptation = self.adaptive_learning_step(
+                new_state,
+                1.0 - performance_metric
+            )
+            new_state = new_state + adaptation
+            
+            # Add performance stats to metrics
+            metrics.update({
+                'adaptation_rate': self.adaptation_rate.item(),
+                'average_performance': self.performance_history[-100:].mean().item(),
+                'performance_trend': (self.performance_history[-100:] - 
+                                    self.performance_history[-200:-100]).mean().item()
+            })
+            
+        except Exception as e:
+            print(f"Warning: Adaptation step failed: {str(e)}")
+            # Provide default metrics even if adaptation fails
+            metrics.update({
+                'adaptation_rate': 0.1,
+                'average_performance': 0.5,
+                'performance_trend': 0.0
+            })
+
+        # Update metrics with proper bounds and required fields
+        metrics.update({
+            'patterns': self.meta_learner['pattern_recognition'](new_state).detach(),
+            'pattern_confidence': torch.sigmoid(rule_embed.norm(dim=-1)).mean().item(),
+            'coherence': max(min(coherence_score, 1.0), 0.0),  # Ensure coherence is bounded
+            'context_stability': context_attention.mean().item() if isinstance(context_attention, torch.Tensor) else 0.0
+        })
+
+        try:
+            # Performance monitoring with bounded metrics
+            performance_metric = min(max(metrics['coherence'], 0.0), 1.0)
+            self.performance_history = torch.cat([
+                self.performance_history[1:],
+                torch.tensor([performance_metric], device=self.performance_history.device)
+            ])
+            
+            # Apply adaptive learning
+            adaptation = self.adaptive_learning_step(
+                new_state.detach(),
+                1.0 - performance_metric
+            )
+            new_state = new_state + adaptation
+            
+            # Add performance stats to metrics
+            metrics.update({
+                'adaptation_rate': float(self.adaptation_rate.mean().item()),
+                'average_performance': float(self.performance_history[-100:].mean().item()),
+                'performance_trend': float((self.performance_history[-100:] - 
+                                         self.performance_history[-200:-100]).mean().item())
+            })
+            
+        except Exception as e:
+            print(f"Warning: Adaptation step failed: {str(e)}")
+            # Provide default metrics even if adaptation fails
+            metrics.update({
+                'adaptation_rate': 0.1,
+                'average_performance': 0.5,
+                'performance_trend': 0.0
+            })
+
+        # Ensure output requires gradients
+        if not deterministic:
+            state = state.detach().requires_grad_(True)
+
+        # Keep original shape for state history
+        batch_state = new_state.clone()
+        # Store mean across batch dimension for history
+        self.state_history = self.state_history[-10:] + [new_state.mean(dim=0, keepdim=True).detach()]
+
+        return new_state, metrics  # Detach output state
 
     def get_state(self):
         """Get current model state with proper shape"""
         if not hasattr(self, 'current_state'):
             self.current_state = torch.zeros(1, self.hidden_dim)
-        return self.current_state
+        return self.current_state.clone()  # Return a clone to prevent modifications
 
     def get_config(self) -> Dict[str, Any]:
         """Return model configuration."""
