@@ -10,6 +10,7 @@ import logging
 from .attention import GlobalWorkspace
 from .memory import WorkingMemory, InformationIntegration
 from .consciousness_state import CognitiveProcessIntegration, ConsciousnessStateManager
+from .error_handling import ErrorHandler, ErrorCorrection, validate_state
 
 torch.set_default_dtype(torch.float32)
 torch.set_default_device('cpu')  # or 'cuda' if using GPU
@@ -121,6 +122,11 @@ class ConsciousnessModel(nn.Module):
         })
 
         self.logger = logging.getLogger(__name__)
+        self.cognition_progress_history = []
+
+        # Add error handling components
+        self.error_handler = ErrorHandler(self.logger)
+        self.error_correction = ErrorCorrection(hidden_dim)
 
     def add_meta_learning_layer(self):
         """Add meta-learning capabilities"""
@@ -208,325 +214,420 @@ class ConsciousnessModel(nn.Module):
         # Example calculation based on 'phi' metric
         phi = metrics.get('phi', 0)
         cognition_percentage = phi * 100
+        self.cognition_progress_history.append(cognition_percentage)
         return cognition_percentage
+
+    def report_cognition_progress(self):
+        """
+        Report the overall cognition progress and identify areas for improvement.
+        """
+        if not self.cognition_progress_history:
+            return "No cognition progress data available."
+
+        avg_progress = sum(self.cognition_progress_history) / len(self.cognition_progress_history)
+        areas_to_improve = []
+
+        # Example criteria for identifying areas to improve
+        if avg_progress < 50:
+            areas_to_improve.append("Increase phi metric to improve cognition progress.")
+        if 'context_stability' in self.metrics and self.metrics['context_stability'] < 0.5:
+            areas_to_improve.append("Improve context stability.")
+        if 'coherence' in self.metrics and self.metrics['coherence'] < 0.5:
+            areas_to_improve.append("Enhance coherence in state transitions.")
+
+        report = f"Average Cognition Progress: {avg_progress}%\n"
+        if areas_to_improve:
+            report += "Areas to Improve:\n" + "\n".join(areas_to_improve)
+        else:
+            report += "All areas are performing well."
+
+        return report
 
     def forward(self, inputs, state=None, initial_state=None, deterministic=True, consciousness_threshold=0.5):
         """
         Process inputs through consciousness architecture.
         """
-        # Initialize attention maps dictionary 
-        attention_maps = {}
-
-        # Validate and process inputs
-        if not inputs:
-            raise ValueError("Inputs cannot be empty.")
-
-        # Allow for more flexible input combinations
-        required_modalities = {'visual', 'textual'}  # Required modalities
-        missing_modalities = required_modalities - inputs.keys()
-        if missing_modalities:
-            # Auto-populate missing modalities with zero tensors
-            batch_size = next(iter(inputs.values())).size(0)
-            seq_len = next(iter(inputs.values())).size(1)
-            for modality in missing_modalities:
-                inputs[modality] = torch.zeros(batch_size, seq_len, self.hidden_dim, device=inputs[next(iter(inputs.keys()))].device)
-
-        # Check input dimensions
-        expected_dims = {
-            'attention': (None, 8, self.hidden_dim),
-            'memory': (None, 10, self.hidden_dim),
-            'visual': (None, None, self.hidden_dim),
-            'textual': (None, None, self.hidden_dim)
-        }
-
-        # Project inputs to correct dimension if needed
-        for modality, tensor in inputs.items():
-            if modality in expected_dims:
-                # Project if dimensions don't match
-                if tensor.size(-1) != self.hidden_dim:
-                    inputs[modality] = self.input_projection(tensor)
-
-        batch_size = next(iter(inputs.values())).shape[0]
-        inputs = {k: v.clone().detach().to(dtype=torch.float32) if isinstance(v, torch.Tensor) 
-                 else torch.tensor(v, dtype=torch.float32) 
-                 for k, v in inputs.items()}
-
-        # Initialize consciousness state if none provided
-        if state is None:
-            state = torch.zeros(batch_size, self.hidden_dim, device=next(iter(inputs.values())).device)
-        else:
-            state = torch.tensor(state, dtype=torch.float32)
-
-        metrics = {}
-
-        # Global workspace processing
-        workspace_input = next(iter(inputs.values()))
-        workspace_output, workspace_attention = self.global_workspace(workspace_input)
-        
-        # Ensure attention weights have correct shape (batch, seq, seq)
-        attention_weights = workspace_attention.squeeze(1)  # Remove head dimension
-        metrics['attention_weights'] = attention_weights
-        
-        # Working memory update
-        memory_output, memory_state = self.working_memory(
-            workspace_output,
-            deterministic=deterministic,
-            initial_state=initial_state
-        )
-
-        # Information integration
-        integrated_output, phi = self.information_integration(memory_output, deterministic=deterministic)
-        
-        # Update required metrics
-        metrics.update({
-            'memory_state': memory_state,
-            'attention_weights': attention_weights,
-            'phi': phi,
-            'attention_maps': attention_maps
-        })
-
-        # Fix state shape handling - ensure it matches sequence length
-        if 'state' in inputs:
-            # Handle 4D state tensor case
-            state_tensor = inputs['state']
-            if state_tensor.dim() == 4:
-                # Remove extra dimensions (batch, extra_dim, seq, hidden)
-                state_tensor = state_tensor.squeeze(1)
-            elif state_tensor.dim() == 3:
-                # Already correct shape (batch, seq, hidden)
-                pass
-            else:
-                # Add sequence dimension if needed
-                state_tensor = state_tensor.unsqueeze(1)
-            
-            # Now expand to match sequence length
-            target_seq_len = next(iter(inputs.values())).size(1)
-            if state_tensor.size(1) != target_seq_len:
-                state_tensor = state_tensor.expand(-1, target_seq_len, -1)
-            inputs['state'] = state_tensor
-
-        # Cognitive process integration with fixed state shape
-        consciousness_state, attention_maps = self.cognitive_integration(inputs, deterministic=deterministic)
-
-        # Update consciousness state
-        new_state, state_metrics = self.state_manager(
-            consciousness_state,
-            integrated_output,
-            threshold=consciousness_threshold,
-            deterministic=deterministic
-        )
-        metrics.update(state_metrics)
-
-        # Apply multi-head attention
-        attn_output, attention_weights = self.attention(
-            memory_output,
-            memory_output,
-            memory_output,
-            need_weights=True
-        )
-        
-        # Store attention map
-        attention_maps['self_attention'] = attention_weights
-
-        # Add sequence prediction
-        sequence_pred = self.sequence_predictor(new_state)
-        
-        # Add transformation understanding
-        if inputs['visual'].shape[1] > 1:  # If we have a sequence
-            trans_input = torch.cat([new_state[:,0], new_state[:,1]], dim=1)
-            trans_vec = self.transformation_net(trans_input)
-        else:
-            trans_vec = torch.zeros_like(new_state[:,0])
-            
-        # Add rule learning
-        rule_embed = self.rule_encoder(new_state.mean(dim=1))
-        
-        metrics.update({
-            'sequence_predictions': sequence_pred,
-            'transformation_vectors': trans_vec,
-            'rule_embeddings': rule_embed,
-            'rule_confidence': torch.sigmoid(rule_embed.norm(dim=-1, keepdim=True))
-        })
-
-        # Ensure new_state has shape (batch_size, hidden_dim)
-        new_state = new_state.mean(dim=1)
-
-        # Add context-switching challenges
-        context_switching_output = self.context_switching_net(new_state)
-        context_switching_gate = torch.sigmoid(self.context_switching_gate(new_state))
-        context_switching_state = context_switching_gate * context_switching_output + (1 - context_switching_gate) * new_state
-
-        # Add creative problem-solving scenarios
-        creative_problem_solving_output = self.creative_problem_solving_net(new_state)
-        creative_problem_solving_gate = torch.sigmoid(self.creative_problem_solving_gate(new_state))
-        creative_problem_solving_state = creative_problem_solving_gate * creative_problem_solving_output + (1 - creative_problem_solving_gate) * new_state
-
-        # Add self-reflection and meta-learning
-        reflection_output, coherence = self.self_reflection_mechanism(
-            state=new_state,
-            previous_states=self.state_history[-5:]
-        )
-        
-        # Enhanced context handling
-        context_attention = self.enhanced_context_switching(
-            inputs=inputs,
-            context_history=self.context_history
-        )
-        
-        metrics['coherence'] = coherence
-        metrics['context_stability'] = context_attention.mean().item()
-
-        metrics.update({
-            'context_switching_state': context_switching_state,
-            'creative_problem_solving_state': creative_problem_solving_state
-        })
-
-        # Update meta-learning components more robustly
-        if not hasattr(self, 'state_history'):
-            self.state_history = []
-        if not hasattr(self, 'context_history'):
-            self.context_history = []
-            
-        # Store current state in history (limit size)
-        self.state_history = self.state_history[-10:] + [new_state.detach()]
-        
-        # Add self-reflection with proper error handling
         try:
+            # Validate inputs
+            if not inputs:
+                raise ValueError("Inputs cannot be empty")
+
+            # Validate state if provided
+            if state is not None:
+                error_msg = validate_state(state, (inputs[next(iter(inputs))].size(0), self.hidden_dim))
+                if error_msg:
+                    raise ValueError(f"Invalid state: {error_msg}")
+
+            # Initialize attention maps dictionary 
+            attention_maps = {}
+
+            # Validate and process inputs
+            if not inputs:
+                raise ValueError("Inputs cannot be empty.")
+
+            # Allow for more flexible input combinations
+            required_modalities = {'visual', 'textual'}  # Required modalities
+            missing_modalities = required_modalities - inputs.keys()
+            if missing_modalities:
+                # Auto-populate missing modalities with zero tensors
+                batch_size = next(iter(inputs.values())).size(0)
+                seq_len = next(iter(inputs.values())).size(1)
+                for modality in missing_modalities:
+                    inputs[modality] = torch.zeros(batch_size, seq_len, self.hidden_dim, device=inputs[next(iter(inputs.keys()))].device)
+
+            # Check input dimensions
+            expected_dims = {
+                'attention': (None, 8, self.hidden_dim),
+                'memory': (None, 10, self.hidden_dim),
+                'visual': (None, None, self.hidden_dim),
+                'textual': (None, None, self.hidden_dim)
+            }
+
+            # Project inputs to correct dimension if needed
+            for modality, tensor in inputs.items():
+                if modality in expected_dims:
+                    # Project if dimensions don't match
+                    if tensor.size(-1) != self.hidden_dim:
+                        inputs[modality] = self.input_projection(tensor)
+
+            batch_size = next(iter(inputs.values())).shape[0]
+            inputs = {k: v.clone().detach().to(dtype=torch.float32) if isinstance(v, torch.Tensor) 
+                    else torch.tensor(v, dtype=torch.float32) 
+                    for k, v in inputs.items()}
+
+            # Initialize consciousness state if none provided
+            if state is None:
+                state = torch.zeros(batch_size, self.hidden_dim, device=next(iter(inputs.values())).device)
+            else:
+                state = torch.tensor(state, dtype=torch.float32)
+
+            metrics = {}
+
+            # Global workspace processing
+            workspace_input = next(iter(inputs.values()))
+            workspace_output, workspace_attention = self.global_workspace(workspace_input)
+            
+            # Ensure attention weights have correct shape (batch, seq, seq)
+            attention_weights = workspace_attention.squeeze(1)  # Remove head dimension
+            metrics['attention_weights'] = attention_weights
+            
+            # Working memory update
+            memory_output, memory_state = self.working_memory(
+                workspace_output,
+                deterministic=deterministic,
+                initial_state=initial_state
+            )
+
+            # Information integration
+            integrated_output, phi = self.information_integration(memory_output, deterministic=deterministic)
+            
+            # Update required metrics
+            metrics.update({
+                'memory_state': memory_state,
+                'attention_weights': attention_weights,
+                'phi': phi,
+                'attention_maps': attention_maps
+            })
+
+            # Fix state shape handling - ensure it matches sequence length
+            if 'state' in inputs:
+                # Handle 4D state tensor case
+                state_tensor = inputs['state']
+                if state_tensor.dim() == 4:
+                    # Remove extra dimensions (batch, extra_dim, seq, hidden)
+                    state_tensor = state_tensor.squeeze(1)
+                elif state_tensor.dim() == 3:
+                    # Already correct shape (batch, seq, hidden)
+                    pass
+                else:
+                    # Add sequence dimension if needed
+                    state_tensor = state_tensor.unsqueeze(1)
+                
+                # Now expand to match sequence length
+                target_seq_len = next(iter(inputs.values())).size(1)
+                if state_tensor.size(1) != target_seq_len:
+                    state_tensor = state_tensor.expand(-1, target_seq_len, -1)
+                inputs['state'] = state_tensor
+
+            # Cognitive process integration with fixed state shape
+            consciousness_state, attention_maps = self.cognitive_integration(inputs, deterministic=deterministic)
+
+            # Update consciousness state
+            new_state, state_metrics = self.state_manager(
+                consciousness_state,
+                integrated_output,
+                threshold=consciousness_threshold,
+                deterministic=deterministic
+            )
+            metrics.update(state_metrics)
+
+            # Apply multi-head attention
+            attn_output, attention_weights = self.attention(
+                memory_output,
+                memory_output,
+                memory_output,
+                need_weights=True
+            )
+            
+            # Store attention map
+            attention_maps['self_attention'] = attention_weights
+
+            # Add sequence prediction
+            sequence_pred = self.sequence_predictor(new_state)
+            
+            # Add transformation understanding
+            if inputs['visual'].shape[1] > 1:  # If we have a sequence
+                trans_input = torch.cat([new_state[:,0], new_state[:,1]], dim=1)
+                trans_vec = self.transformation_net(trans_input)
+            else:
+                trans_vec = torch.zeros_like(new_state[:,0])
+                
+            # Add rule learning
+            rule_embed = self.rule_encoder(new_state.mean(dim=1))
+            
+            metrics.update({
+                'sequence_predictions': sequence_pred,
+                'transformation_vectors': trans_vec,
+                'rule_embeddings': rule_embed,
+                'rule_confidence': torch.sigmoid(rule_embed.norm(dim=-1, keepdim=True))
+            })
+
+            # Ensure new_state has shape (batch_size, hidden_dim)
+            new_state = new_state.mean(dim=1)
+
+            # Add context-switching challenges
+            context_switching_output = self.context_switching_net(new_state)
+            context_switching_gate = torch.sigmoid(self.context_switching_gate(new_state))
+            context_switching_state = context_switching_gate * context_switching_output + (1 - context_switching_gate) * new_state
+
+            # Add creative problem-solving scenarios
+            creative_problem_solving_output = self.creative_problem_solving_net(new_state)
+            creative_problem_solving_gate = torch.sigmoid(self.creative_problem_solving_gate(new_state))
+            creative_problem_solving_state = creative_problem_solving_gate * creative_problem_solving_output + (1 - creative_problem_solving_gate) * new_state
+
+            # Add self-reflection and meta-learning
             reflection_output, coherence = self.self_reflection_mechanism(
                 state=new_state,
-                previous_states=self.state_history[:-1]  # Exclude current state
+                previous_states=self.state_history[-5:]
             )
+            
+            # Enhanced context handling
+            context_attention = self.enhanced_context_switching(
+                inputs=inputs,
+                context_history=self.context_history
+            )
+            
             metrics['coherence'] = coherence
-        except Exception as e:
-            print(f"Warning: Self-reflection failed: {str(e)}")
-            metrics['coherence'] = 0.0
-            reflection_output = new_state
+            metrics['context_stability'] = context_attention.mean().item()
 
-        # Compute coherence score
-        coherence_score = 0.0
-        if len(self.state_history) > 0:
-            current_state = new_state.detach()
-            similarities = []
-            for prev_state in self.state_history[-5:]:
-                try:
-                    # Handle batch size mismatch by broadcasting
-                    if current_state.size(0) != prev_state.size(0):
-                        if current_state.size(0) > prev_state.size(0):
-                            prev_state = prev_state.expand(current_state.size(0), -1)
-                        else:
-                            current_state = current_state.mean(0, keepdim=True).expand(prev_state.size(0), -1)
-                    sim = F.cosine_similarity(current_state, prev_state, dim=-1)
-                    similarities.append(sim.mean().item())
-                except Exception as e:
-                    print(f"Warning: Similarity calculation failed: {str(e)}")
-                    similarities.append(0.0)
-            coherence_score = sum(similarities) / len(similarities) if similarities else 0.0
+            metrics.update({
+                'context_switching_state': context_switching_state,
+                'creative_problem_solving_state': creative_problem_solving_state
+            })
 
-        # Update metrics with coherence
-        metrics.update({
-            'coherence': coherence_score,
-            'context_stability': context_attention.mean().item() if isinstance(context_attention, torch.Tensor) else 0.0
-        })
-
-        # Update state history with proper shape
-        if len(self.state_history) >= 10:
-            self.state_history.pop(0)
-        self.state_history.append(new_state.detach().mean(dim=0) if new_state.dim() > 2 else new_state.detach())
-
-        # Update current state
-        self.current_state = new_state.detach().mean(dim=0, keepdim=True)
-
-        # Ensure all required metrics are present before returning
-        required_metrics = ['memory_state', 'attention_weights', 'phi', 'attention_maps']
-        for metric in required_metrics:
-            if metric not in metrics:
-                metrics[metric] = torch.tensor(0.0) if metric != 'attention_maps' else {}
-
-        try:
-            # Add performance monitoring
-            performance_metric = metrics['coherence']
-            self.performance_history = torch.cat([
-                self.performance_history[1:],
-                torch.tensor([performance_metric])
-            ])
+            # Update meta-learning components more robustly
+            if not hasattr(self, 'state_history'):
+                self.state_history = []
+            if not hasattr(self, 'context_history'):
+                self.context_history = []
+                
+            # Store current state in history (limit size)
+            self.state_history = self.state_history[-10:] + [new_state.detach()]
             
-            # Apply adaptive learning
-            adaptation = self.adaptive_learning_step(
-                new_state,
-                1.0 - performance_metric
+            # Add self-reflection with proper error handling
+            try:
+                reflection_output, coherence = self.self_reflection_mechanism(
+                    state=new_state,
+                    previous_states=self.state_history[:-1]  # Exclude current state
+                )
+                metrics['coherence'] = coherence
+            except Exception as e:
+                print(f"Warning: Self-reflection failed: {str(e)}")
+                metrics['coherence'] = 0.0
+                reflection_output = new_state
+
+            # Compute coherence score
+            coherence_score = 0.0
+            if len(self.state_history) > 0:
+                current_state = new_state.detach()
+                similarities = []
+                for prev_state in self.state_history[-5:]:
+                    try:
+                        # Handle batch size mismatch by broadcasting
+                        if current_state.size(0) != prev_state.size(0):
+                            if current_state.size(0) > prev_state.size(0):
+                                prev_state = prev_state.expand(current_state.size(0), -1)
+                            else:
+                                current_state = current_state.mean(0, keepdim=True).expand(prev_state.size(0), -1)
+                        sim = F.cosine_similarity(current_state, prev_state, dim=-1)
+                        similarities.append(sim.mean().item())
+                    except Exception as e:
+                        print(f"Warning: Similarity calculation failed: {str(e)}")
+                        similarities.append(0.0)
+                coherence_score = sum(similarities) / len(similarities) if similarities else 0.0
+
+            # Update metrics with coherence
+            metrics.update({
+                'coherence': coherence_score,
+                'context_stability': context_attention.mean().item() if isinstance(context_attention, torch.Tensor) else 0.0
+            })
+
+            # Update state history with proper shape
+            if len(self.state_history) >= 10:
+                self.state_history.pop(0)
+            self.state_history.append(new_state.detach().mean(dim=0) if new_state.dim() > 2 else new_state.detach())
+
+            # Update current state
+            self.current_state = new_state.detach().mean(dim=0, keepdim=True)
+
+            # Ensure all required metrics are present before returning
+            required_metrics = ['memory_state', 'attention_weights', 'phi', 'attention_maps']
+            for metric in required_metrics:
+                if metric not in metrics:
+                    metrics[metric] = torch.tensor(0.0) if metric != 'attention_maps' else {}
+
+            try:
+                # Add performance monitoring
+                performance_metric = metrics['coherence']
+                self.performance_history = torch.cat([
+                    self.performance_history[1:],
+                    torch.tensor([performance_metric])
+                ])
+                
+                # Apply adaptive learning
+                adaptation = self.adaptive_learning_step(
+                    new_state,
+                    1.0 - performance_metric
+                )
+                new_state = new_state + adaptation
+                
+                # Add performance stats to metrics
+                metrics.update({
+                    'adaptation_rate': self.adaptation_rate.item(),
+                    'average_performance': self.performance_history[-100:].mean().item(),
+                    'performance_trend': (self.performance_history[-100:] - 
+                                        self.performance_history[-200:-100]).mean().item()
+                })
+                
+            except Exception as e:
+                print(f"Warning: Adaptation step failed: {str(e)}")
+                # Provide default metrics even if adaptation fails
+                metrics.update({
+                    'adaptation_rate': 0.1,
+                    'average_performance': 0.5,
+                    'performance_trend': 0.0
+                })
+
+            # Update metrics with proper bounds and required fields
+            metrics.update({
+                'patterns': self.meta_learner['pattern_recognition'](new_state).detach(),
+                'pattern_confidence': torch.sigmoid(rule_embed.norm(dim=-1)).mean().item(),
+                'coherence': max(min(coherence_score, 1.0), 0.0),  # Ensure coherence is bounded
+                'context_stability': context_attention.mean().item() if isinstance(context_attention, torch.Tensor) else 0.0
+            })
+
+            try:
+                # Performance monitoring with bounded metrics
+                performance_metric = min(max(metrics['coherence'], 0.0), 1.0)
+                self.performance_history = torch.cat([
+                    self.performance_history[1:],
+                    torch.tensor([performance_metric], device=self.performance_history.device)
+                ])
+                
+                # Apply adaptive learning
+                adaptation = self.adaptive_learning_step(
+                    new_state.detach(),
+                    1.0 - performance_metric
+                )
+                new_state = new_state + adaptation
+                
+                # Add performance stats to metrics
+                metrics.update({
+                    'adaptation_rate': float(self.adaptation_rate.mean().item()),
+                    'average_performance': float(self.performance_history[-100:].mean().item()),
+                    'performance_trend': float((self.performance_history[-100:] - 
+                                            self.performance_history[-200:-100]).mean().item())
+                })
+                
+            except Exception as e:
+                print(f"Warning: Adaptation step failed: {str(e)}")
+                # Provide default metrics even if adaptation fails
+                metrics.update({
+                    'adaptation_rate': 0.1,
+                    'average_performance': 0.5,
+                    'performance_trend': 0.0
+                })
+
+            # Apply error correction with proper metrics tracking
+            corrected_state, error_prob = self.error_correction(new_state)
+            metrics['error_prob'] = error_prob
+            
+            if error_prob > 0.3:  # Threshold for logging errors
+                self.error_handler.log_error(
+                    "state_error",
+                    f"High error probability: {error_prob:.3f}",
+                    metrics
+                )
+            
+            # Update state after error correction
+            new_state = corrected_state
+            
+            # Ensure incremental learning performance
+            if hasattr(self, 'state_history') and len(self.state_history) > 0:
+                # Calculate coherence with history
+                current_state = new_state.detach()
+                similarities = []
+                for prev_state in self.state_history[-5:]:
+                    try:
+                        # Handle batch size mismatch
+                        if current_state.size(0) != prev_state.size(0):
+                            if current_state.size(0) > prev_state.size(0):
+                                prev_state = prev_state.expand(current_state.size(0), -1)
+                            else:
+                                current_state = current_state.mean(0, keepdim=True).expand(prev_state.size(0), -1)
+                        sim = F.cosine_similarity(current_state, prev_state, dim=-1)
+                        similarities.append(sim.mean().item())
+                    except Exception as e:
+                        self.logger.warning(f"Similarity calculation failed: {str(e)}")
+                        similarities.append(0.0)
+                
+                coherence_score = sum(similarities) / len(similarities) if similarities else 0.0
+                # Apply exponential moving average for stability
+                if 'coherence' in metrics:
+                    metrics['coherence'] = 0.7 * metrics['coherence'] + 0.3 * coherence_score
+                else:
+                    metrics['coherence'] = coherence_score
+
+            # Add error correction
+            new_state, error_prob = self.error_correction(new_state)
+            if error_prob > 0.3:  # Threshold for logging errors
+                self.error_handler.log_error(
+                    "state_error",
+                    f"High error probability: {error_prob:.3f}",
+                    metrics
+                )
+
+            # Ensure output requires gradients
+            if not deterministic:
+                state = state.detach().requires_grad_(True)
+
+            # Keep original shape for state history
+            batch_state = new_state.clone()
+            # Store mean across batch dimension for history
+            self.state_history = self.state_history[-10:] + [new_state.mean(dim=0, keepdim=True).detach()]
+
+            # Calculate cognition progress
+            cognition_progress = self.calculate_cognition_progress(metrics)
+            metrics['cognition_progress'] = cognition_progress
+            self.logger.debug(f"Cognition Progress: {cognition_progress}%")
+
+        except Exception as e:
+            self.error_handler.log_error(
+                "forward_pass_error",
+                str(e),
+                {"input_shapes": {k: v.shape for k, v in inputs.items()}}
             )
-            new_state = new_state + adaptation
-            
-            # Add performance stats to metrics
-            metrics.update({
-                'adaptation_rate': self.adaptation_rate.item(),
-                'average_performance': self.performance_history[-100:].mean().item(),
-                'performance_trend': (self.performance_history[-100:] - 
-                                    self.performance_history[-200:-100]).mean().item()
-            })
-            
-        except Exception as e:
-            print(f"Warning: Adaptation step failed: {str(e)}")
-            # Provide default metrics even if adaptation fails
-            metrics.update({
-                'adaptation_rate': 0.1,
-                'average_performance': 0.5,
-                'performance_trend': 0.0
-            })
-
-        # Update metrics with proper bounds and required fields
-        metrics.update({
-            'patterns': self.meta_learner['pattern_recognition'](new_state).detach(),
-            'pattern_confidence': torch.sigmoid(rule_embed.norm(dim=-1)).mean().item(),
-            'coherence': max(min(coherence_score, 1.0), 0.0),  # Ensure coherence is bounded
-            'context_stability': context_attention.mean().item() if isinstance(context_attention, torch.Tensor) else 0.0
-        })
-
-        try:
-            # Performance monitoring with bounded metrics
-            performance_metric = min(max(metrics['coherence'], 0.0), 1.0)
-            self.performance_history = torch.cat([
-                self.performance_history[1:],
-                torch.tensor([performance_metric], device=self.performance_history.device)
-            ])
-            
-            # Apply adaptive learning
-            adaptation = self.adaptive_learning_step(
-                new_state.detach(),
-                1.0 - performance_metric
-            )
-            new_state = new_state + adaptation
-            
-            # Add performance stats to metrics
-            metrics.update({
-                'adaptation_rate': float(self.adaptation_rate.mean().item()),
-                'average_performance': float(self.performance_history[-100:].mean().item()),
-                'performance_trend': float((self.performance_history[-100:] - 
-                                         self.performance_history[-200:-100]).mean().item())
-            })
-            
-        except Exception as e:
-            print(f"Warning: Adaptation step failed: {str(e)}")
-            # Provide default metrics even if adaptation fails
-            metrics.update({
-                'adaptation_rate': 0.1,
-                'average_performance': 0.5,
-                'performance_trend': 0.0
-            })
-
-        # Ensure output requires gradients
-        if not deterministic:
-            state = state.detach().requires_grad_(True)
-
-        # Keep original shape for state history
-        batch_state = new_state.clone()
-        # Store mean across batch dimension for history
-        self.state_history = self.state_history[-10:] + [new_state.mean(dim=0, keepdim=True).detach()]
-
-        # Calculate cognition progress
-        cognition_progress = self.calculate_cognition_progress(metrics)
-        metrics['cognition_progress'] = cognition_progress
-        self.logger.debug(f"Cognition Progress: {cognition_progress}%")
+            raise
 
         return new_state, metrics  # Detach output state
 
@@ -555,6 +656,18 @@ class ConsciousnessModel(nn.Module):
             'num_layers': 6,
             'num_states': 4,
             'dropout_rate': 0.1
+        }
+
+    def analyze_model_health(self) -> Dict[str, Any]:
+        """
+        Analyze model health and error patterns
+        """
+        error_patterns = self.error_handler.analyze_errors()
+        return {
+            "error_patterns": error_patterns,
+            "total_errors": len(self.error_handler.error_history),
+            "recent_errors": len([e for e in self.error_handler.error_history[-100:] if e]),
+            "error_rate": len(self.error_handler.error_history[-100:]) / 100 if self.error_handler.error_history else 0
         }
 
 class WorkingMemory(nn.Module):
