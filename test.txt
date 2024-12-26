@@ -2,19 +2,19 @@
 platform linux -- Python 3.10.12, pytest-8.3.4, pluggy-1.5.0
 rootdir: /home/kasinadhsarma/experiment/cognition-l3-experiment
 plugins: cov-6.0.0, anyio-4.7.0
-collected 114 items
+collected 115 items
 
 tests/benchmarks/test_arc_reasoning.py .......                           [  6%]
 tests/benchmarks/test_bigbench_reasoning.py .....                        [ 10%]
-tests/test_consciousness.py ............................                 [ 35%]
-tests/test_environment.py .....s..                                       [ 42%]
+tests/test_consciousness.py ............................                 [ 34%]
+tests/test_environment.py ......s..                                      [ 42%]
 tests/test_error_correction.py .........                                 [ 50%]
 tests/unit/attention/test_attention.py ......                            [ 55%]
 tests/unit/attention/test_attention_mechanisms.py .......                [ 61%]
 tests/unit/integration/test_cognitive_integration.py ......              [ 66%]
-tests/unit/integration/test_state_management.py ......                   [ 71%]
+tests/unit/integration/test_state_management.py ......                   [ 72%]
 tests/unit/memory/test_integration.py ......                             [ 77%]
-tests/unit/memory/test_memory.py ..........                              [ 85%]
+tests/unit/memory/test_memory.py ..........                              [ 86%]
 tests/unit/memory/test_memory_components.py ..........                   [ 94%]
 tests/unit/state/test_consciousness_state_management.py ......           [100%]
 
@@ -24,4 +24,4 @@ tests/unit/state/test_consciousness_state_management.py ......           [100%]
     _C._set_default_tensor_type(t)
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-================== 113 passed, 1 skipped, 1 warning in 8.94s ===================
+================== 114 passed, 1 skipped, 1 warning in 10.78s ==================

@@ -209,12 +209,32 @@ class ConsciousnessModel(nn.Module):
 
     def calculate_cognition_progress(self, metrics):
         """
-        Calculate the percentage of cognition achieved based on metrics.
+        Calculate the percentage of cognition achieved based on multiple metrics.
         """
-        # Example calculation based on 'phi' metric
-        phi = metrics.get('phi', 0)
-        cognition_percentage = phi * 100
-        self.cognition_progress_history.append(cognition_percentage)
+        scores = {
+            'phi': metrics.get('phi', 0),
+            'coherence': metrics.get('coherence', 0),
+            'stability': metrics.get('stability', 0),
+            'adaptability': metrics.get('adaptability', 0),
+            'memory_retention': metrics.get('memory_retention', 0)
+        }
+        
+        weights = {
+            'phi': 0.3,
+            'coherence': 0.2,
+            'stability': 0.15,
+            'adaptability': 0.15,
+            'memory_retention': 0.2
+        }
+
+        weighted_score = sum(weights[k] * scores[k] for k in weights)
+        cognition_percentage = weighted_score * 100
+
+        self.cognition_progress_history.append({
+            'total': cognition_percentage,
+            'breakdown': scores
+        })
+        
         return cognition_percentage
 
     def report_cognition_progress(self):
@@ -223,25 +243,24 @@ class ConsciousnessModel(nn.Module):
         """
         if not self.cognition_progress_history:
             return "No cognition progress data available."
-
-        avg_progress = sum(self.cognition_progress_history) / len(self.cognition_progress_history)
-        areas_to_improve = []
-
-        # Example criteria for identifying areas to improve
-        if avg_progress < 50:
-            areas_to_improve.append("Increase phi metric to improve cognition progress.")
-        if 'context_stability' in self.metrics and self.metrics['context_stability'] < 0.5:
-            areas_to_improve.append("Improve context stability.")
-        if 'coherence' in self.metrics and self.metrics['coherence'] < 0.5:
-            areas_to_improve.append("Enhance coherence in state transitions.")
-
-        report = f"Average Cognition Progress: {avg_progress}%\n"
-        if areas_to_improve:
-            report += "Areas to Improve:\n" + "\n".join(areas_to_improve)
-        else:
-            report += "All areas are performing well."
-
-        return report
+            
+        latest = self.cognition_progress_history[-1]
+        report = [
+            f"Current Cognition Progress: {latest['total']:.2f}%\n",
+            "Breakdown:",
+            f"- Integrated Information (Phi): {latest['breakdown']['phi']*100:.2f}%",
+            f"- Thought Coherence: {latest['breakdown']['coherence']*100:.2f}%",
+            f"- Context Stability: {latest['breakdown']['stability']*100:.2f}%",
+            f"- Adaptability: {latest['breakdown']['adaptability']*100:.2f}%",
+            f"- Memory Retention: {latest['breakdown']['memory_retention']*100:.2f}%\n",
+            "Areas Needing Improvement:"
+        ]
+        
+        for metric, value in latest['breakdown'].items():
+            if value < 0.6:
+                report.append(f"- {metric.replace('_', ' ').title()}")
+                
+        return "\n".join(report)
 
     def forward(self, inputs, state=None, initial_state=None, deterministic=True, consciousness_threshold=0.5):
         """
