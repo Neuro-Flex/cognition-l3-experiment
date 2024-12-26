@@ -4,6 +4,7 @@ from typing import Dict, Tuple, Optional
 from .working_memory import WorkingMemory
 from .information_integration import InformationIntegration
 from .self_awareness import SelfAwareness  # Add this import
+from .dynamic_attention import DynamicAttention
 
 class MultiHeadAttention(nn.Module):
     """Custom MultiHeadAttention implementation"""
@@ -106,12 +107,11 @@ class ConsciousnessModel(nn.Module):
             dropout_rate=dropout_rate
         )
 
-        # Add attention for multi-head processing
-        self.attention = nn.MultiheadAttention(
-            embed_dim=hidden_dim,
+        # Replace standard attention with dynamic attention
+        self.attention = DynamicAttention(
+            hidden_dim=hidden_dim,
             num_heads=num_heads,
-            dropout=dropout_rate,
-            batch_first=True
+            dropout_rate=dropout_rate
         )
         
         # Add self-awareness module
@@ -123,6 +123,14 @@ class ConsciousnessModel(nn.Module):
         
         # State tracking
         self.previous_state = None
+
+        # Add goal tracking
+        self.goal_state = nn.Parameter(torch.randn(1, hidden_dim))
+        self.goal_updater = nn.GRUCell(hidden_dim, hidden_dim)
+        
+        # Context tracking
+        self.context_state = None
+        self.context_integrator = nn.Linear(hidden_dim * 2, hidden_dim)
 
     def get_config(self):
         return {
@@ -151,6 +159,14 @@ class ConsciousnessModel(nn.Module):
         """Calculate energy cost of processing"""
         return torch.abs(self.energy_tracker(torch.mean(cognitive_outputs, dim=0))).mean()
 
+    def update_goals(self, current_state: torch.Tensor):
+        """Update goal state based on current conscious state"""
+        batch_size = current_state.size(0)
+        expanded_goals = self.goal_state.expand(batch_size, -1)
+        self.goal_state = nn.Parameter(
+            self.goal_updater(current_state, expanded_goals)
+        )
+
     def forward(self, inputs: Dict[str, torch.Tensor],
                 state: Optional[torch.Tensor] = None,
                 deterministic: bool = True) -> Tuple[torch.Tensor, Dict]:
@@ -165,8 +181,20 @@ class ConsciousnessModel(nn.Module):
         # Get input tensor
         x = inputs['attention']  # [batch_size, seq_len, hidden_dim]
         
-        # Apply attention - x is already in the correct shape
-        attn_out, attention_weights = self.attention(x, x, x)
+        # Apply dynamic attention with goals and context
+        attn_out, attention_metrics = self.attention(
+            x, x, x,
+            goals=self.goal_state.expand(x.size(0), -1),
+            context=self.context_state
+        )
+        
+        # Update context state
+        if self.context_state is None:
+            self.context_state = attn_out.mean(dim=1)
+        else:
+            self.context_state = self.context_integrator(
+                torch.cat([self.context_state, attn_out.mean(dim=1)], dim=-1)
+            )
         
         # Process through global workspace with reshaped state
         conscious_out, memory_state = self.global_workspace(attn_out, state, deterministic)
@@ -183,12 +211,17 @@ class ConsciousnessModel(nn.Module):
         # Calculate integration metrics
         integrated_out, phi = self.information_integration(conscious_out, deterministic)
         
+        # Update goals based on conscious output
+        self.update_goals(conscious_out)
+
         # Update metrics
         metrics = {
-            'attention_weights': attention_weights,
+            'attention_weights': attention_metrics,
             'memory_state': memory_state,
             'phi': phi,
-            'attention_maps': attention_weights,
+            'attention_maps': attention_metrics,
+            'goal_state': self.goal_state,
+            'context_state': self.context_state,
             **awareness_metrics
         }
         
