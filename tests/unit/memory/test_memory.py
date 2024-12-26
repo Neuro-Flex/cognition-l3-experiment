@@ -218,7 +218,7 @@ class TestMemoryComponents(ConsciousnessTestBase):
             hidden_dim=hidden_dim,
             dropout_rate=0.1
         ).to(device)
-        loaded_memory.load_state_dict(torch.load(model_path))
+        loaded_memory.load_state_dict(torch.load(model_path, weights_only=True))
         loaded_memory.eval()
 
         # Verify loaded model produces the same output

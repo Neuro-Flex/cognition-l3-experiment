@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import time
+import logging
 from models.consciousness_model import ConsciousnessModel
 from tests.unit.test_base import ConsciousnessTestBase
 
@@ -182,7 +183,7 @@ class TestConsciousnessModel(ConsciousnessTestBase):
             input_dim=model.input_dim
         )
         torch.manual_seed(0)  # Reset seed
-        loaded_model.load_state_dict(torch.load(model_path))
+        loaded_model.load_state_dict(torch.load(model_path, weights_only=True))
         loaded_model.eval()
         
         # Verify loaded model produces similar output with relaxed tolerances
@@ -480,6 +481,26 @@ class TestConsciousnessModel(ConsciousnessTestBase):
         
         # Expect some resilience to noise
         assert similarity > 1 - noise_level
+
+    def test_cognition_progress_calculation(self, model, sample_input, deterministic, caplog):
+        """Test the calculation of cognition progress."""
+        with caplog.at_level(logging.DEBUG, logger=model.logger.name):
+            state = torch.zeros(sample_input['attention'].shape[0], model.hidden_dim)
+            _, metrics = model(sample_input, initial_state=state, deterministic=deterministic)
+    
+        assert 'cognition_progress' in metrics
+        assert isinstance(metrics['cognition_progress'], torch.Tensor)
+        assert metrics['cognition_progress'].dtype == torch.float
+        assert torch.all(metrics['cognition_progress'] >= 0) and torch.all(metrics['cognition_progress'] <= 100)
+
+    def test_logging_of_cognition_progress(self, model, sample_input, deterministic, caplog):
+        """Ensure that cognition progress is logged correctly."""
+        with caplog.at_level(logging.DEBUG, logger=model.logger.name):
+            state = torch.zeros(sample_input['attention'].shape[0], model.hidden_dim)
+            model(sample_input, initial_state=state, deterministic=deterministic)
+        
+        # Check that the cognition progress log is present
+        assert any("Cognition Progress" in message for message in caplog.text.splitlines())
 
 if __name__ == '__main__':
     pytest.main([__file__])

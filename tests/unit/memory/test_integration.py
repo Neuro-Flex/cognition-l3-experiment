@@ -76,7 +76,7 @@ class TestInformationIntegration:
             output2, _ = integration_module(inputs, deterministic=True)
 
         # Compute correlations between modules
-        outputs_flat = output2.view(batch_size * num_modules, input_dim)
+        outputs_flat = output2.reshape(batch_size * num_modules, input_dim)
         module_correlations = []
         
         # Calculate pairwise correlations

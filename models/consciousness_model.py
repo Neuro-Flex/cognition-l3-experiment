@@ -5,10 +5,14 @@ import torch
 import torch.nn as nn
 from typing import Any, Dict, List, Tuple
 import torch.nn.functional as F
+import logging
 
 from .attention import GlobalWorkspace
 from .memory import WorkingMemory, InformationIntegration
 from .consciousness_state import CognitiveProcessIntegration, ConsciousnessStateManager
+
+torch.set_default_dtype(torch.float32)
+torch.set_default_device('cpu')  # or 'cuda' if using GPU
 
 class ConsciousnessModel(nn.Module):
     """
@@ -116,6 +120,8 @@ class ConsciousnessModel(nn.Module):
             'adaptation_gate': nn.Linear(hidden_dim * 2, hidden_dim)
         })
 
+        self.logger = logging.getLogger(__name__)
+
     def add_meta_learning_layer(self):
         """Add meta-learning capabilities"""
         self.meta_learner = nn.ModuleDict({
@@ -194,6 +200,15 @@ class ConsciousnessModel(nn.Module):
             )
             
             return adaptation * self.adaptation_rate.item()
+
+    def calculate_cognition_progress(self, metrics):
+        """
+        Calculate the percentage of cognition achieved based on metrics.
+        """
+        # Example calculation based on 'phi' metric
+        phi = metrics.get('phi', 0)
+        cognition_percentage = phi * 100
+        return cognition_percentage
 
     def forward(self, inputs, state=None, initial_state=None, deterministic=True, consciousness_threshold=0.5):
         """
@@ -507,6 +522,11 @@ class ConsciousnessModel(nn.Module):
         batch_state = new_state.clone()
         # Store mean across batch dimension for history
         self.state_history = self.state_history[-10:] + [new_state.mean(dim=0, keepdim=True).detach()]
+
+        # Calculate cognition progress
+        cognition_progress = self.calculate_cognition_progress(metrics)
+        metrics['cognition_progress'] = cognition_progress
+        self.logger.debug(f"Cognition Progress: {cognition_progress}%")
 
         return new_state, metrics  # Detach output state
 
