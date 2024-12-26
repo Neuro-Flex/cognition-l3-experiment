@@ -6,6 +6,7 @@ import torch.nn as nn
 from typing import Any, Dict, List, Tuple
 import torch.nn.functional as F
 import logging
+import time  # Added for profiling
 
 from .attention import GlobalWorkspace
 from .memory import WorkingMemory, InformationIntegration
@@ -211,20 +212,26 @@ class ConsciousnessModel(nn.Module):
         """
         Calculate the percentage of cognition achieved based on multiple metrics.
         """
+        start_time = time.time()  # Start profiling
+
         scores = {
             'phi': metrics.get('phi', 0),
             'coherence': metrics.get('coherence', 0),
             'stability': metrics.get('stability', 0),
             'adaptability': metrics.get('adaptability', 0),
-            'memory_retention': metrics.get('memory_retention', 0)
+            'memory_retention': metrics.get('memory_retention', 0),
+            'emotional_coherence': metrics.get('emotional_coherence', 0),
+            'decision_making_efficiency': metrics.get('decision_making_efficiency', 0)
         }
         
         weights = {
-            'phi': 0.3,
-            'coherence': 0.2,
-            'stability': 0.15,
-            'adaptability': 0.15,
-            'memory_retention': 0.2
+            'phi': 0.25,
+            'coherence': 0.15,
+            'stability': 0.1,
+            'adaptability': 0.1,
+            'memory_retention': 0.15,
+            'emotional_coherence': 0.15,
+            'decision_making_efficiency': 0.1
         }
 
         weighted_score = sum(weights[k] * scores[k] for k in weights)
@@ -234,6 +241,9 @@ class ConsciousnessModel(nn.Module):
             'total': cognition_percentage,
             'breakdown': scores
         })
+
+        end_time = time.time()  # End profiling
+        self.logger.debug(f"calculate_cognition_progress took {end_time - start_time:.6f} seconds")
         
         return cognition_percentage
 
@@ -252,7 +262,9 @@ class ConsciousnessModel(nn.Module):
             f"- Thought Coherence: {latest['breakdown']['coherence']*100:.2f}%",
             f"- Context Stability: {latest['breakdown']['stability']*100:.2f}%",
             f"- Adaptability: {latest['breakdown']['adaptability']*100:.2f}%",
-            f"- Memory Retention: {latest['breakdown']['memory_retention']*100:.2f}%\n",
+            f"- Memory Retention: {latest['breakdown']['memory_retention']*100:.2f}%",
+            f"- Emotional Coherence: {latest['breakdown']['emotional_coherence']*100:.2f}%",  # New metric
+            f"- Decision Making Efficiency: {latest['breakdown']['decision_making_efficiency']*100:.2f}%\n",  # New metric
             "Areas Needing Improvement:"
         ]
         
@@ -266,6 +278,8 @@ class ConsciousnessModel(nn.Module):
         """
         Process inputs through consciousness architecture.
         """
+        start_time = time.time()  # Start profiling
+
         try:
             # Validate inputs
             if not inputs:
@@ -274,7 +288,7 @@ class ConsciousnessModel(nn.Module):
             # Validate state if provided
             if state is not None:
                 error_msg = validate_state(state, (inputs[next(iter(inputs))].size(0), self.hidden_dim))
-                if error_msg:
+                if (error_msg):
                     raise ValueError(f"Invalid state: {error_msg}")
 
             # Initialize attention maps dictionary 
@@ -640,6 +654,9 @@ class ConsciousnessModel(nn.Module):
             metrics['cognition_progress'] = cognition_progress
             self.logger.debug(f"Cognition Progress: {cognition_progress}%")
 
+            end_time = time.time()  # End profiling
+            self.logger.debug(f"forward pass took {end_time - start_time:.6f} seconds")
+
         except Exception as e:
             self.error_handler.log_error(
                 "forward_pass_error",
@@ -688,6 +705,12 @@ class ConsciousnessModel(nn.Module):
             "recent_errors": len([e for e in self.error_handler.error_history[-100:] if e]),
             "error_rate": len(self.error_handler.error_history[-100:]) / 100 if self.error_handler.error_history else 0
         }
+
+    def optimize_memory_usage(self):
+        """Optimize memory usage by clearing unnecessary histories"""
+        self.cognition_progress_history = self.cognition_progress_history[-100:]  # Keep last 100 entries
+        self.state_history = self.state_history[-50:]  # Keep last 50 states
+        self.context_history = self.context_history[-50:]  # Keep last 50 contexts
 
 class WorkingMemory(nn.Module):
     def __init__(self, input_dim, hidden_dim, dropout_rate):
@@ -836,6 +859,7 @@ class CognitiveProcessIntegration(nn.Module):
 class InformationIntegration(nn.Module):
     def __init__(self, hidden_dim: int, num_modules: int, dropout_rate: float):
         super().__init__()
+        self.dropout = nn.Dropout(dropout_rate)
         # Store modules in a ModuleList
         self.module_list = nn.ModuleList([
             nn.Sequential(
