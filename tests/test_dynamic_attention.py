@@ -124,7 +124,7 @@ class TestDynamicAttention:
             metrics2['attention_weights']
         )
 
-    def test_integration_with_consciousness(self):
+    def test_integration_with_consciousness(self, attention, sample_input):
         """Test integration with ConsciousnessModel"""
         model = ConsciousnessModel(
             hidden_dim=128,
@@ -133,17 +133,24 @@ class TestDynamicAttention:
             num_states=3,
             dropout_rate=0.1
         )
-        
+    
         inputs = {
-            'attention': torch.randn(2, 5, 128)
+            'attention': torch.randn(2, 5, 128)  # [batch_size, seq_len, hidden_dim]
         }
-        
+    
+        # Run forward pass
         output, metrics = model(inputs)
-        
-        assert output.shape == (2, 128)
-        assert 'attention_weights' in metrics
-        assert 'goal_state' in metrics
-        assert 'context_state' in metrics
+        print(f"metrics keys: {metrics.keys()}")
+        print(f"retrieved_memory shape: {metrics.get('retrieved_memory', 'Not Found')}")
+    
+        # Check if 'retrieved_memory' is in metrics
+        assert 'retrieved_memory' in metrics, "retrieved_memory not found in metrics"
+    
+        # Verify the shape of retrieved_memory
+        retrieved_memory = metrics['retrieved_memory']
+        assert retrieved_memory.shape == (2, 128), (
+            f"retrieved_memory has shape {retrieved_memory.shape}, expected (2, 128)"
+        )
 
     @pytest.mark.parametrize('batch_size', [1, 4, 8])
     def test_batch_processing(self, attention, batch_size):

@@ -12,6 +12,7 @@ from .attention import GlobalWorkspace
 from .memory import WorkingMemory, InformationIntegration
 from .consciousness_state import CognitiveProcessIntegration, ConsciousnessStateManager
 from .error_handling import ErrorHandler, ErrorCorrection, validate_state
+from .long_term_memory import LongTermMemory  # Add import
 
 torch.set_default_dtype(torch.float32)
 torch.set_default_device('cpu')  # or 'cuda' if using GPU
@@ -130,6 +131,13 @@ class ConsciousnessModel(nn.Module):
         self.error_correction = ErrorCorrection(hidden_dim)
 
         self.target_cognition_percentage = 90.0  # Target cognition percentage
+
+        # Add long-term memory component
+        self.long_term_memory = LongTermMemory(
+            input_dim=hidden_dim,
+            hidden_dim=hidden_dim,
+            dropout_rate=dropout_rate
+        )
 
     def add_meta_learning_layer(self):
         """Add meta-learning capabilities"""
@@ -669,6 +677,27 @@ class ConsciousnessModel(nn.Module):
             metrics['cognition_progress'] = cognition_progress
             self.logger.debug(f"Cognition Progress: {cognition_progress}%")
 
+            # Add long-term memory retrieval with proper shape handling
+            query = consciousness_state.mean(dim=1)  # [batch_size, hidden_dim]
+            if query.dim() == 1:
+                query = query.unsqueeze(0)  # Add batch dimension if missing
+            
+            # Ensure query has correct batch size
+            batch_size = next(iter(inputs.values())).size(0)
+            if query.size(0) == 1 and batch_size > 1:
+                query = query.expand(batch_size, -1)
+            
+            # Retrieve and store memory
+            retrieved_memory = self.long_term_memory.retrieve_memory(query)  # Should return [batch_size, hidden_dim]
+            self.long_term_memory.store_memory(new_state.detach())
+            
+            # Double check retrieved memory shape
+            if retrieved_memory.size(0) != batch_size:
+                retrieved_memory = retrieved_memory.expand(batch_size, -1)
+            
+            # Include retrieved_memory in metrics
+            metrics['retrieved_memory'] = retrieved_memory
+
             end_time = time.time()  # End profiling
             self.logger.debug(f"forward pass took {end_time - start_time:.6f} seconds")
 
@@ -699,7 +728,7 @@ class ConsciousnessModel(nn.Module):
         }
 
     @classmethod
-    def create_default_config(cls) -> Dict[str, Any]:
+    def create_default_config(cls) -> Dict[str, Any]:  # Fixed syntax error here
         """Create default model configuration."""
         return {
             'hidden_dim': 512,

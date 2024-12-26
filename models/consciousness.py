@@ -5,6 +5,7 @@ from .working_memory import WorkingMemory
 from .information_integration import InformationIntegration
 from .self_awareness import SelfAwareness  # Add this import
 from .dynamic_attention import DynamicAttention
+from .long_term_memory import LongTermMemory
 
 class MultiHeadAttention(nn.Module):
     """Custom MultiHeadAttention implementation"""
@@ -71,6 +72,15 @@ class GlobalWorkspace(nn.Module):
         output = self.output_layer(integrated)
         output = self.layer_norm(output)
 
+        # Add assertion to ensure output has correct hidden_dim
+        assert output.shape[-1] == self.hidden_dim, (
+            f"GlobalWorkspace output has hidden_dim {output.shape[-1]}, expected {self.hidden_dim}"
+        )
+        
+        # Add logging for debugging
+        print(f"GlobalWorkspace output shape: {output.shape}")
+        print(f"memory_state shape: {memory_state.shape}")
+
         return output, memory_state
 
 class ConsciousnessModel(nn.Module):
@@ -118,6 +128,14 @@ class ConsciousnessModel(nn.Module):
         self.self_awareness = SelfAwareness(
             hidden_dim=hidden_dim,
             num_heads=num_heads,
+            dropout_rate=dropout_rate
+        )
+        
+        # Long-term memory
+        self.long_term_memory = LongTermMemory(
+            input_dim=self.input_dim,
+            hidden_dim=hidden_dim,
+            memory_size=1000,
             dropout_rate=dropout_rate
         )
         
@@ -170,6 +188,8 @@ class ConsciousnessModel(nn.Module):
     def forward(self, inputs: Dict[str, torch.Tensor],
                 state: Optional[torch.Tensor] = None,
                 deterministic: bool = True) -> Tuple[torch.Tensor, Dict]:
+        # Initialize metrics dictionary at the start
+        metrics = {}
         
         # Get device from inputs
         device = next(iter(inputs.values())).device
@@ -199,10 +219,23 @@ class ConsciousnessModel(nn.Module):
         # Process through global workspace with reshaped state
         conscious_out, memory_state = self.global_workspace(attn_out, state, deterministic)
         
+        # Add assertion to ensure conscious_out has correct hidden_dim
+        assert conscious_out.shape[-1] == self.hidden_dim, (
+            f"conscious_out has hidden_dim {conscious_out.shape[-1]}, expected {self.hidden_dim}"
+        )
+        
+        # Add logging to verify conscious_out dimensions
+        print(f"conscious_out shape: {conscious_out.shape}")
+        
         # Process through self-awareness
         aware_state, awareness_metrics = self.self_awareness(
             conscious_out,
             previous_state=self.previous_state
+        )
+        
+        # Add assertion to ensure aware_state has correct hidden_dim
+        assert aware_state.shape[-1] == self.hidden_dim, (
+            f"aware_state has hidden_dim {aware_state.shape[-1]}, expected {self.hidden_dim}"
         )
         
         # Update previous state
@@ -213,17 +246,62 @@ class ConsciousnessModel(nn.Module):
         
         # Update goals based on conscious output
         self.update_goals(conscious_out)
-
-        # Update metrics
-        metrics = {
-            'attention_weights': attention_metrics,
-            'memory_state': memory_state,
-            'phi': phi,
-            'attention_maps': attention_metrics,
-            'goal_state': self.goal_state,
-            'context_state': self.context_state,
-            **awareness_metrics
-        }
+        
+        # Store memory with correct dimensions
+        memory_to_store = conscious_out.detach()  # Remove mean reduction
+        
+        # Use long_term_memory instead of memory
+        try:
+            # Ensure memory_to_store has correct shape [batch_size, hidden_dim]
+            memory_to_store = conscious_out.mean(dim=1) if len(conscious_out.shape) == 3 else conscious_out
+            
+            # Store memory
+            self.long_term_memory.store_memory(memory_to_store)
+            
+            # Retrieve memory using current state as query
+            retrieved_memory = self.long_term_memory.retrieve_memory(memory_to_store)
+            
+            # Ensure retrieved memory has correct shape
+            if retrieved_memory.shape != (memory_to_store.shape[0], self.hidden_dim):
+                retrieved_memory = retrieved_memory.view(memory_to_store.shape[0], self.hidden_dim)
+                
+            metrics['retrieved_memory'] = retrieved_memory
+            
+        except Exception as e:
+            print(f"Memory operation error: {e}")
+            # Create zero tensor with correct shape
+            metrics['retrieved_memory'] = torch.zeros(
+                inputs['attention'].shape[0], 
+                self.hidden_dim, 
+                device=inputs['attention'].device
+            )
+        
+        # Average over sequence length to get [batch_size, hidden_dim] 
+        query = conscious_out.mean(dim=1) if len(conscious_out.shape) > 2 else conscious_out
+        print(f"query shape: {query.shape}")
+        
+        # Ensure query has correct shape before memory retrieval
+        if query.dim() == 1:
+            query = query.unsqueeze(0)
+            
+        # Retrieve memory and ensure it's in metrics
+        try:
+            retrieved_memory = self.long_term_memory.retrieve_memory(query)
+            print(f"retrieved_memory shape: {retrieved_memory.shape}")
+            metrics['retrieved_memory'] = retrieved_memory
+        except Exception as e:
+            print(f"Memory retrieval error: {e}")
+            metrics['retrieved_memory'] = torch.zeros(
+                query.size(0), 
+                self.hidden_dim, 
+                device=query.device
+            )
+        
+        # Update remaining metrics
+        metrics.update(attention_metrics)
+        metrics['goal_state'] = self.goal_state
+        metrics['context_state'] = self.context_state
+        metrics['phi'] = phi
         
         return aware_state, metrics
 

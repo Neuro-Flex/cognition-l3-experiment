@@ -504,5 +504,24 @@ class TestConsciousnessModel(ConsciousnessTestBase):
         # Check that the cognition progress log is present
         assert any("Cognition Progress" in message for message in caplog.text.splitlines())
 
+    def test_long_term_memory_integration(self, model, sample_input):
+        """Test integration of long-term memory in the consciousness model."""
+        model.eval()
+        state = torch.zeros(sample_input['attention'].shape[0], model.hidden_dim)
+    
+        # Run forward pass
+        with torch.no_grad():
+            output, metrics = model(sample_input, initial_state=state, deterministic=True)
+            print(f"metrics keys: {metrics.keys()}")
+    
+        # Add assertion to check if 'retrieved_memory' is in metrics
+        assert 'retrieved_memory' in metrics, "retrieved_memory not found in metrics"
+        
+        # Additional assertions can be added here to verify the correctness of retrieved_memory
+        retrieved_memory = metrics['retrieved_memory']
+        assert retrieved_memory.shape == (sample_input['attention'].shape[0], model.hidden_dim), (
+            f"retrieved_memory has shape {retrieved_memory.shape}, expected ({sample_input['attention'].shape[0]}, {model.hidden_dim})"
+        )
+
 if __name__ == '__main__':
     pytest.main([__file__])

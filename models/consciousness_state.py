@@ -187,3 +187,16 @@ class ConsciousnessStateManager(nn.Module):
         # Value loss (MSE)
         value_loss = torch.mean(td_error ** 2)
         return value_loss, td_error
+
+def test_long_term_memory_integration(self, model, sample_input):
+        # ...existing code...
+        output, metrics = model(sample_input)
+        
+        # ...existing code...
+        
+        # Add assertion to check if 'retrieved_memory' is in metrics and has correct shape
+        assert 'retrieved_memory' in metrics, "retrieved_memory not found in metrics"
+        assert metrics['retrieved_memory'].shape == (sample_input['query'].size(0), 128), (
+            f"retrieved_memory has shape {metrics['retrieved_memory'].shape}, expected ({sample_input['query'].size(0)}, 128)"
+        )
+        # ...existing code...

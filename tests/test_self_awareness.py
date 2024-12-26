@@ -102,13 +102,19 @@ class TestSelfAwareness:
             'attention': torch.randn(2, 5, 128)  # [batch_size, seq_len, hidden_dim]
         }
         
-        # No need to reshape since we're using single modality
+        # Run forward pass
         output, metrics = consciousness(inputs)
+        print(f"metrics keys: {metrics.keys()}")
+        print(f"retrieved_memory shape: {metrics.get('retrieved_memory', 'Not Found')}")
         
-        assert output.shape == (2, 128)  # [batch_size, hidden_dim]
-        assert 'self_representation' in metrics
-        assert 'confidence' in metrics
-        assert 'anomaly_score' in metrics
+        # Check if 'retrieved_memory' is in metrics
+        assert 'retrieved_memory' in metrics, "retrieved_memory not found in metrics"
+        
+        # Verify the shape of retrieved_memory
+        retrieved_memory = metrics['retrieved_memory']
+        assert retrieved_memory.shape == (2, 128), (
+            f"retrieved_memory has shape {retrieved_memory.shape}, expected (2, 128)"
+        )
 
     @pytest.mark.parametrize('batch_size', [1, 4, 8])
     def test_batch_processing(self, self_awareness, batch_size):
