@@ -1,6 +1,9 @@
 import torch
 import torch.nn as nn
 from typing import Dict, Tuple, Optional
+from .working_memory import WorkingMemory
+from .information_integration import InformationIntegration
+from .self_awareness import SelfAwareness  # Add this import
 
 class MultiHeadAttention(nn.Module):
     """Custom MultiHeadAttention implementation"""
@@ -41,21 +44,26 @@ class GlobalWorkspace(nn.Module):
               deterministic: bool = True) -> Tuple[torch.Tensor, torch.Tensor]:
         # Process inputs through attention mechanism
         attended = self.attention(inputs, deterministic=deterministic)
-
-        # Update working memory
+        
+        # Ensure memory_state has correct shape
         if memory_state is None:
             memory_state = torch.zeros_like(attended)
+        else:
+            # Expand memory state if needed
+            memory_state = memory_state.unsqueeze(1).expand(-1, attended.size(1), -1)
 
+        # Update working memory with broadcasting
         gate = torch.sigmoid(self.memory_gate(attended))
         update = self.memory_update(attended)
         memory_state = gate * memory_state + (1 - gate) * update
 
-        # Ensure memory gate output dimensions are correct
-        memory_state = memory_state.view(memory_state.size(0), -1)
+        # Pool across sequence dimension if needed
+        if len(memory_state.shape) == 3:
+            memory_state = memory_state.mean(dim=1)
 
         # Integrate information
         integrated = torch.relu(self.integration_layer(
-            torch.cat([attended, memory_state], dim=-1)
+            torch.cat([attended.mean(dim=1), memory_state], dim=-1)
         ))
 
         # Generate conscious output
@@ -105,6 +113,16 @@ class ConsciousnessModel(nn.Module):
             dropout=dropout_rate,
             batch_first=True
         )
+        
+        # Add self-awareness module
+        self.self_awareness = SelfAwareness(
+            hidden_dim=hidden_dim,
+            num_heads=num_heads,
+            dropout_rate=dropout_rate
+        )
+        
+        # State tracking
+        self.previous_state = None
 
     def get_config(self):
         return {
@@ -144,24 +162,37 @@ class ConsciousnessModel(nn.Module):
         if state is None:
             state = torch.zeros(inputs['attention'].shape[0], self.hidden_dim, device=device)
             
-        # Process inputs
-        x = torch.stack(list(inputs.values()), dim=1)
+        # Get input tensor
+        x = inputs['attention']  # [batch_size, seq_len, hidden_dim]
         
-        # Apply attention
+        # Apply attention - x is already in the correct shape
         attn_out, attention_weights = self.attention(x, x, x)
         
-        # Process through global workspace
+        # Process through global workspace with reshaped state
         conscious_out, memory_state = self.global_workspace(attn_out, state, deterministic)
+        
+        # Process through self-awareness
+        aware_state, awareness_metrics = self.self_awareness(
+            conscious_out,
+            previous_state=self.previous_state
+        )
+        
+        # Update previous state
+        self.previous_state = aware_state.detach()
         
         # Calculate integration metrics
         integrated_out, phi = self.information_integration(conscious_out, deterministic)
         
-        return integrated_out, {
+        # Update metrics
+        metrics = {
             'attention_weights': attention_weights,
             'memory_state': memory_state,
             'phi': phi,
-            'attention_maps': attention_weights
+            'attention_maps': attention_weights,
+            **awareness_metrics
         }
+        
+        return aware_state, metrics
 
 def create_consciousness_module(hidden_dim: int = 512,
                              num_cognitive_processes: int = 4) -> ConsciousnessModel:
