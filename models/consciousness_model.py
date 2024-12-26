@@ -244,6 +244,8 @@ class ConsciousnessModel(nn.Module):
             'breakdown': scores
         })
 
+        self.logger.debug(f"Cognition Progress: {cognition_percentage}%")
+        
         end_time = time.time()  # End profiling
         self.logger.debug(f"calculate_cognition_progress took {end_time - start_time:.6f} seconds")
         
@@ -267,16 +269,23 @@ class ConsciousnessModel(nn.Module):
             f"- Adaptability: {latest['breakdown']['adaptability']*100:.2f}%",
             f"- Memory Retention: {latest['breakdown']['memory_retention']*100:.2f}%",
             f"- Emotional Coherence: {latest['breakdown']['emotional_coherence']*100:.2f}%",
-            f"- Decision Making Efficiency: {latest['breakdown']['decision_making_efficiency']*100:.2f}%\n",
-            "Areas Needing Improvement:"
+            f"- Decision Making Efficiency: {latest['breakdown']['decision_making_efficiency']*100:.2f}%\n"
         ]
         
-        # Identify areas below target threshold (e.g., 70%)
-        threshold = 70.0
-        for metric, value in latest['breakdown'].items():
-            if value * 100 < threshold:
-                readable_metric = metric.replace('_', ' ').title()
-                report.append(f"- {readable_metric}: {value*100:.2f}%")
+        # Identify areas below target threshold
+        threshold = self.target_cognition_percentage / 100  # Convert to fraction
+        areas_needing_improvement = [
+            metric.replace('_', ' ').title()
+            for metric, value in latest['breakdown'].items()
+            if value < threshold
+        ]
+        
+        if areas_needing_improvement:
+            report.append("Areas Needing Improvement:")
+            for area in areas_needing_improvement:
+                report.append(f"- {area}")
+        else:
+            report.append("No areas need improvement.")
         
         return "\n".join(report)
 

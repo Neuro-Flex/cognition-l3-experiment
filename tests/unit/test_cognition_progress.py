@@ -172,6 +172,24 @@ class TestCognitionProgress:
         report = model.report_cognition_progress()
         assert "Current Cognition Progress: 81.00%" in report
         assert "Target Cognition Progress: 70.00%" in report
-        assert "Areas Needing Improvement:" in report
+        assert "No areas need improvement." in report
         # No areas should be listed as needing improvement
-        assert not any(metric in report for metric in []), "No metrics should need improvement"
+        assert "Areas Needing Improvement:" not in report
+
+    def test_achieve_90_percent_cognition(self, model):
+        model.target_cognition_percentage = 90.0
+        metrics = {
+            'phi': 0.9,
+            'coherence': 0.9,
+            'stability': 0.9,
+            'adaptability': 0.9,
+            'memory_retention': 0.9,
+            'emotional_coherence': 0.9,
+            'decision_making_efficiency': 0.9
+        }
+        progress = model.calculate_cognition_progress(metrics)
+        report = model.report_cognition_progress()
+        assert "Current Cognition Progress: 90.00%" in report
+        assert "Target Cognition Progress: 90.00%" in report
+        assert "Areas Needing Improvement:" not in report
+        assert progress == pytest.approx(90.0)
