@@ -6,6 +6,7 @@ from .information_integration import InformationIntegration
 from .self_awareness import SelfAwareness  # Add this import
 from .dynamic_attention import DynamicAttention
 from .long_term_memory import LongTermMemory
+from .simulated_emotions import SimulatedEmotions
 
 class MultiHeadAttention(nn.Module):
     """Custom MultiHeadAttention implementation"""
@@ -149,6 +150,12 @@ class ConsciousnessModel(nn.Module):
         # Context tracking
         self.context_state = None
         self.context_integrator = nn.Linear(hidden_dim * 2, hidden_dim)
+        
+        # Add emotional processing component
+        self.emotional_processor = SimulatedEmotions(hidden_dim=hidden_dim)
+        
+        # Add emotion integration layer
+        self.emotion_integration = nn.Linear(hidden_dim * 2, hidden_dim)
 
     def get_config(self):
         return {
@@ -161,13 +168,16 @@ class ConsciousnessModel(nn.Module):
 
     @staticmethod
     def create_default_config():
-        return {
+        config = {
             'hidden_dim': 128,
             'num_heads': 4,
             'num_layers': 4,
             'num_states': 4,
-            'dropout_rate': 0.1
+            'dropout_rate': 0.1,
+            'emotion_decay': 0.95,
+            'emotion_threshold': 0.3
         }
+        return config
 
     def calculate_phi(self, conscious_output):
         """Calculate information integration metric (phi)"""
@@ -297,6 +307,20 @@ class ConsciousnessModel(nn.Module):
                 device=query.device
             )
         
+        # Process through emotional system
+        emotional_state, emotion_metrics = self.emotional_processor(conscious_out)
+        
+        # Integrate emotional influence
+        combined = torch.cat([conscious_out, emotional_state], dim=-1)
+        integrated_state = self.emotion_integration(combined)
+        
+        # Update metrics
+        metrics.update({
+            'emotional_state': emotional_state,
+            'emotion_intensities': emotion_metrics['emotion_intensities'],
+            'emotional_influence': emotion_metrics['emotional_influence']
+        })
+        
         # Update remaining metrics
         metrics.update(attention_metrics)
         metrics['goal_state'] = self.goal_state
@@ -304,6 +328,17 @@ class ConsciousnessModel(nn.Module):
         metrics['phi'] = phi
         
         return aware_state, metrics
+
+    def calculate_cognition_progress(self, metrics: Dict[str, float]) -> float:
+        # ...existing code...
+        
+        # Add emotional coherence to progress calculation
+        if 'emotion_intensities' in metrics:
+            emotional_balance = torch.mean(metrics['emotion_intensities']).item()
+            metrics['emotional_coherence'] = emotional_balance
+        
+        # Continue with existing progress calculation
+        # ...existing code...
 
 def create_consciousness_module(hidden_dim: int = 512,
                              num_cognitive_processes: int = 4) -> ConsciousnessModel:
