@@ -123,7 +123,7 @@ class ConsciousnessModel(nn.Module):
         })
 
         self.logger = logging.getLogger(__name__)
-        self.cognition_progress_history = []
+        self.cognition_progress_history = []  # Initialize history
 
         # Add error handling components
         self.error_handler = ErrorHandler(self.logger)
@@ -240,7 +240,7 @@ class ConsciousnessModel(nn.Module):
         cognition_percentage = weighted_score * 100
 
         self.cognition_progress_history.append({
-            'total': cognition_percentage,
+            'cognition_progress': cognition_percentage,  # Change key from 'total' to 'cognition_progress'
             'breakdown': scores
         })
 
@@ -260,7 +260,7 @@ class ConsciousnessModel(nn.Module):
         
         latest = self.cognition_progress_history[-1]
         report = [
-            f"Current Cognition Progress: {latest['total']:.2f}%",
+            f"Current Cognition Progress: {latest['cognition_progress']:.2f}%",
             f"Target Cognition Progress: {self.target_cognition_percentage:.2f}%\n",
             "Breakdown:",
             f"- Integrated Information (Phi): {latest['breakdown']['phi']*100:.2f}%",
