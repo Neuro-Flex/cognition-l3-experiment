@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict
 
 from models.base_model import BaseModel
 from core.config import ModelConfig
@@ -102,3 +102,89 @@ class MathematicalReasoning(ReasoningModule):
             attention_mask=attention_mask,
             context=context
         )
+
+class BasicReasoning(nn.Module):
+    def __init__(self, hidden_dim: int, num_heads: int = 4):
+        super().__init__()
+        self.hidden_dim = hidden_dim
+        
+        # Logical reasoning components
+        self.logical_layer = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim * 2),
+            nn.LayerNorm(hidden_dim * 2),
+            nn.ReLU(),
+            nn.Linear(hidden_dim * 2, hidden_dim)
+        )
+        
+        # Pattern recognition
+        self.pattern_recognition = nn.MultiheadAttention(
+            hidden_dim, num_heads=num_heads, batch_first=True
+        )
+        
+        # Causal inference
+        self.causal_inference = nn.Sequential(
+            nn.Linear(hidden_dim * 2, hidden_dim),
+            nn.LayerNorm(hidden_dim),
+            nn.ReLU()
+        )
+        
+        # Reasoning confidence estimation
+        self.confidence_estimator = nn.Sequential(
+            nn.Linear(hidden_dim * 3, 1),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
+        # Logical reasoning
+        logical_out = self.logical_layer(x)
+        
+        # Pattern recognition through attention
+        pattern_out, pattern_weights = self.pattern_recognition(x, x, x)
+        
+        # Causal inference by combining logical and pattern outputs
+        causal_input = torch.cat([logical_out, pattern_out], dim=-1)
+        causal_out = self.causal_inference(causal_input)
+        
+        # Calculate reasoning confidence
+        confidence_input = torch.cat([logical_out, pattern_out, causal_out], dim=-1)
+        confidence = self.confidence_estimator(confidence_input)
+        
+        # Calculate normalized reasoning scores
+        with torch.no_grad():
+            # Normalize using softmax for pattern weights
+            pattern_weights_norm = torch.softmax(pattern_weights, dim=-1)
+            pattern_score = torch.mean(pattern_weights_norm)
+            
+            # Normalize cosine similarities to [0,1] range
+            logical_sim = torch.cosine_similarity(logical_out, x, dim=-1)
+            logical_score = torch.clamp((logical_sim + 1) / 2, 0, 1).mean()
+            
+            causal_sim = torch.cosine_similarity(causal_out, x, dim=-1)
+            causal_score = torch.clamp((causal_sim + 1) / 2, 0, 1).mean()
+        
+        return {
+            'output': causal_out,
+            'confidence': confidence,
+            'metrics': {
+                'logical_score': logical_score.item(),
+                'pattern_score': pattern_score.item(),
+                'causal_score': causal_score.item(),
+                'reasoning_weights': pattern_weights
+            }
+        }
+
+    def calculate_reasoning_score(self, metrics: Dict[str, float]) -> float:
+        """Calculate overall reasoning capability score"""
+        weights = {
+            'logical': 0.4,
+            'pattern': 0.3,
+            'causal': 0.3
+        }
+        
+        score = (
+            weights['logical'] * metrics['logical_score'] +
+            weights['pattern'] * metrics['pattern_score'] +
+            weights['causal'] * metrics['causal_score']
+        )
+        
+        return score * 100  # Convert to percentage
