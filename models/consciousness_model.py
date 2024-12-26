@@ -129,6 +129,8 @@ class ConsciousnessModel(nn.Module):
         self.error_handler = ErrorHandler(self.logger)
         self.error_correction = ErrorCorrection(hidden_dim)
 
+        self.target_cognition_percentage = 90.0  # Target cognition percentage
+
     def add_meta_learning_layer(self):
         """Add meta-learning capabilities"""
         self.meta_learner = nn.ModuleDict({
@@ -249,29 +251,33 @@ class ConsciousnessModel(nn.Module):
 
     def report_cognition_progress(self):
         """
-        Report the overall cognition progress and identify areas for improvement.
+        Report the overall cognition progress, target, and identify areas for improvement.
         """
         if not self.cognition_progress_history:
             return "No cognition progress data available."
-            
+        
         latest = self.cognition_progress_history[-1]
         report = [
-            f"Current Cognition Progress: {latest['total']:.2f}%\n",
+            f"Current Cognition Progress: {latest['total']:.2f}%",
+            f"Target Cognition Progress: {self.target_cognition_percentage:.2f}%\n",
             "Breakdown:",
             f"- Integrated Information (Phi): {latest['breakdown']['phi']*100:.2f}%",
             f"- Thought Coherence: {latest['breakdown']['coherence']*100:.2f}%",
             f"- Context Stability: {latest['breakdown']['stability']*100:.2f}%",
             f"- Adaptability: {latest['breakdown']['adaptability']*100:.2f}%",
             f"- Memory Retention: {latest['breakdown']['memory_retention']*100:.2f}%",
-            f"- Emotional Coherence: {latest['breakdown']['emotional_coherence']*100:.2f}%",  # New metric
-            f"- Decision Making Efficiency: {latest['breakdown']['decision_making_efficiency']*100:.2f}%\n",  # New metric
+            f"- Emotional Coherence: {latest['breakdown']['emotional_coherence']*100:.2f}%",
+            f"- Decision Making Efficiency: {latest['breakdown']['decision_making_efficiency']*100:.2f}%\n",
             "Areas Needing Improvement:"
         ]
         
+        # Identify areas below target threshold (e.g., 70%)
+        threshold = 70.0
         for metric, value in latest['breakdown'].items():
-            if value < 0.6:
-                report.append(f"- {metric.replace('_', ' ').title()}")
-                
+            if value * 100 < threshold:
+                readable_metric = metric.replace('_', ' ').title()
+                report.append(f"- {readable_metric}: {value*100:.2f}%")
+        
         return "\n".join(report)
 
     def forward(self, inputs, state=None, initial_state=None, deterministic=True, consciousness_threshold=0.5):

@@ -138,3 +138,40 @@ class TestCognitionProgress:
         assert len(model.cognition_progress_history) == 100
         assert len(model.state_history) == 50
         assert len(model.context_history) == 50
+
+    def test_report_cognition_progress_with_target(self, model):
+        model.target_cognition_percentage = 80.0
+        metrics = {
+            'phi': 0.6,
+            'coherence': 0.75,
+            'stability': 0.65,
+            'adaptability': 0.80,
+            'memory_retention': 0.70,
+            'emotional_coherence': 0.60,  # Below threshold
+            'decision_making_efficiency': 0.85
+        }
+        model.calculate_cognition_progress(metrics)
+        report = model.report_cognition_progress()
+        assert "Current Cognition Progress: 68.75%" in report
+        assert "Target Cognition Progress: 80.00%" in report
+        assert "Emotional Coherence: 60.00%" in report
+        assert "Areas Needing Improvement:" in report
+
+    def test_report_cognition_progress_no_improvement_needed(self, model):
+        model.target_cognition_percentage = 70.0
+        metrics = {
+            'phi': 0.8,
+            'coherence': 0.75,
+            'stability': 0.85,
+            'adaptability': 0.80,
+            'memory_retention': 0.90,
+            'emotional_coherence': 0.75,  # Above threshold
+            'decision_making_efficiency': 0.85
+        }
+        model.calculate_cognition_progress(metrics)
+        report = model.report_cognition_progress()
+        assert "Current Cognition Progress: 81.00%" in report
+        assert "Target Cognition Progress: 70.00%" in report
+        assert "Areas Needing Improvement:" in report
+        # No areas should be listed as needing improvement
+        assert not any(metric in report for metric in []), "No metrics should need improvement"
