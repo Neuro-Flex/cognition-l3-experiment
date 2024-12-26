@@ -267,5 +267,22 @@ class TestConsciousnessModel(ConsciousnessTestBase):
         score_std = np.std(stability_scores)
         assert score_std < 0.3, f"Context switching should be stable, got std={score_std}"
 
+    def test_advanced_reflection(self):
+        model = ConsciousnessModel(
+            hidden_dim=128,
+            num_heads=4,
+            num_layers=2,
+            num_states=3,
+            dropout_rate=0.1,
+            advanced_reflection=True
+        )
+        sample_inputs = {
+            "visual": torch.randn(2, 5, 128),
+            "textual": torch.randn(2, 5, 128)
+        }
+        _, metrics = model(sample_inputs)
+        assert 'coherence' in metrics, "Coherence should be computed"
+        print("Advanced reflection coherence:", metrics['coherence'])
+
 if __name__ == '__main__':
     pytest.main([__file__])

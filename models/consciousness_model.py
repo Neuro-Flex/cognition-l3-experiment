@@ -15,7 +15,7 @@ class ConsciousnessModel(nn.Module):
     Complete consciousness model integrating GWT, IIT, working memory,
     and cognitive process management.
     """
-    def __init__(self, hidden_dim: int, num_heads: int, num_layers: int, num_states: int, dropout_rate: float = 0.1, input_dim: int = None):
+    def __init__(self, hidden_dim: int, num_heads: int, num_layers: int, num_states: int, dropout_rate: float = 0.1, input_dim: int = None, advanced_reflection: bool = False):
         super().__init__()
         self.hidden_dim = hidden_dim
         self.num_heads = num_heads
@@ -23,6 +23,7 @@ class ConsciousnessModel(nn.Module):
         self.num_states = num_states
         self.dropout_rate = dropout_rate
         self.input_dim = input_dim if input_dim is not None else hidden_dim
+        self.advanced_reflection = advanced_reflection
 
         # Global Workspace for conscious awareness
         self.global_workspace = GlobalWorkspace(
@@ -141,6 +142,15 @@ class ConsciousnessModel(nn.Module):
             # Apply adaptive scaling
             coherence_score = torch.sigmoid(torch.tensor(coherence_score * 2)).item()
         
+        if self.advanced_reflection and previous_states:
+            # Example of correlation-based scoring
+            corr_values = []
+            for prev_state in previous_states[-5:]:
+                corr = torch.mean((current_state - current_state.mean()) * (prev_state - prev_state.mean())) 
+                corr_values.append(corr.item())
+            corr_score = sum(corr_values) / len(corr_values) if corr_values else 0.0
+            coherence_score = (coherence_score + corr_score) / 2.0
+
         # Generate insights about own processing
         reflection_output = self.meta_learner['pattern_recognition'](current_state)
         reflection_output = F.relu(reflection_output)  # Ensure non-negative insights
