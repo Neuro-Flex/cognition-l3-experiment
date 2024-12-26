@@ -40,7 +40,17 @@ class TestConsciousnessModel:
         assert metrics['emotional_influence'].shape == output.shape
         assert torch.any(metrics['emotional_influence'] != 0)
         
-    def test_emotion_cognition_progress(self, model):
+    def test_memory_retrieval_shape(self, model, sample_input):
+        """Test if memory retrieval produces correct shapes"""
+        output, metrics = model(sample_input)
+        
+        # Check if retrieved_memory exists and has correct shape
+        assert 'retrieved_memory' in metrics
+        retrieved_memory = metrics['retrieved_memory']
+        assert retrieved_memory.shape == (sample_input['attention'].size(0), model.hidden_dim)
+
+    def test_goal_state_updates(self, model, sample_input):
+        """Test if goal state updates properly"""
         """Test if emotional states affect cognition progress."""
         metrics = {
             'phi': 0.8,

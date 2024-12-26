@@ -329,16 +329,23 @@ class ConsciousnessModel(nn.Module):
         
         return aware_state, metrics
 
-    def calculate_cognition_progress(self, metrics: Dict[str, float]) -> float:
-        # ...existing code...
+    def calculate_cognition_progress(self, metrics):
+        """
+        Calculate cognitive progress based on metrics.
+        Returns a value between 0 and 100.
+        """
+        # Calculate emotional coherence
+        emotional_coherence = torch.mean(metrics['emotion_intensities']).item()
+        metrics['emotional_coherence'] = emotional_coherence
         
-        # Add emotional coherence to progress calculation
-        if 'emotion_intensities' in metrics:
-            emotional_balance = torch.mean(metrics['emotion_intensities']).item()
-            metrics['emotional_coherence'] = emotional_balance
+        # Calculate overall progress using phi, coherence and emotional_coherence
+        progress = (
+            0.4 * metrics['phi'] +
+            0.3 * metrics['coherence'] +
+            0.3 * emotional_coherence
+        ) * 100
         
-        # Continue with existing progress calculation
-        # ...existing code...
+        return max(0, min(100, progress))  # Ensure result is between 0 and 100
 
 def create_consciousness_module(hidden_dim: int = 512,
                              num_cognitive_processes: int = 4) -> ConsciousnessModel:
