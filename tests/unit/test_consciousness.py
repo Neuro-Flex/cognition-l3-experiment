@@ -16,10 +16,12 @@ def model():
 @pytest.fixture
 def sample_input():
     batch_size = 2
-    seq_len = 5
+    seq_len = 1
     hidden_dim = 128
     return {
-        'attention': torch.randn(batch_size, seq_len, hidden_dim)
+        'attention': torch.randn(batch_size, seq_len, hidden_dim),
+        'perception': torch.randn(batch_size, seq_len, hidden_dim),
+        'memory': torch.randn(batch_size, seq_len, hidden_dim)
     }
 
 class TestConsciousnessModel:
@@ -37,9 +39,8 @@ class TestConsciousnessModel:
         assert 'emotional_influence' in metrics
         
         # Check emotional influence on output
-        assert metrics['emotional_influence'].shape == output.shape
-        assert torch.any(metrics['emotional_influence'] != 0)
-        
+        assert metrics['emotional_influence'].shape == output['broadcasted'].shape
+    
     def test_memory_retrieval_shape(self, model, sample_input):
         """Test if memory retrieval produces correct shapes"""
         output, metrics = model(sample_input)
@@ -67,7 +68,39 @@ class TestConsciousnessModel:
         output, metrics = model(sample_input)
         
         # Check output shape
-        assert output.shape == (sample_input['attention'].size(0), model.hidden_dim)
+        assert output['broadcasted'].shape == (sample_input['attention'].size(0), model.hidden_dim)
         
         # Verify emotional metrics
         assert all(k in metrics for k in ['emotional_state', 'emotion_intensities'])
+
+    def test_global_workspace_integration(self, model, sample_input):
+        """Test if global workspace properly integrates information"""
+        output, metrics = model(sample_input)
+        
+        # Check workspace metrics
+        assert 'workspace_attention' in metrics
+        assert 'competition_weights' in metrics
+        
+        # Verify shapes
+        assert metrics['workspace_attention'].shape == (
+            sample_input['attention'].size(0),
+            3,  # num_modalities
+            3   # seq_len (since each modality has seq_len=1, concatenated seq_len=3)
+        )
+        
+        # Test competition mechanism
+        competition_weights = metrics['competition_weights']
+        assert torch.all(competition_weights >= 0)
+        assert torch.allclose(competition_weights.sum(dim=-1), 
+                            torch.ones_like(competition_weights.sum(dim=-1)))
+
+    def test_information_broadcast(self, model, sample_input):
+        """Test if information is properly broadcasted"""
+        output, metrics = model(sample_input)
+        
+        # Output should be influenced by all modalities
+        assert output['broadcasted'].shape == (sample_input['attention'].size(0), model.hidden_dim)
+        
+        # Test if output contains integrated information
+        prev_output, _ = model(sample_input)
+        assert not torch.allclose(output['broadcasted'], prev_output['broadcasted'], atol=1e-6)

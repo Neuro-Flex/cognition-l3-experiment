@@ -56,6 +56,15 @@ class SimulatedEmotions(nn.Module):
         """Update current emotional state with decay."""
         self.current_emotions = self.current_emotions * self.emotion_decay + new_emotions * (1 - self.emotion_decay)
         
+    def get_intensities(self) -> torch.Tensor:
+        """
+        Returns the current emotion intensities.
+        """
+        # Minimal placeholder implementation
+        if hasattr(self, '_current_intensities'):
+            return self._current_intensities
+        return torch.zeros(6)
+        
     def forward(self, state: torch.Tensor) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
         # Generate new emotions
         emotions = self.generate_emotions(state)
