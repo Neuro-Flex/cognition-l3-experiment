@@ -3,7 +3,8 @@ Main consciousness model integrating all components.
 """
 import torch
 import torch.nn as nn
-from typing import Any, Dict
+from typing import Any, Dict, List, Tuple
+import torch.nn.functional as F
 
 from .attention import GlobalWorkspace
 from .memory import WorkingMemory, InformationIntegration
@@ -86,6 +87,84 @@ class ConsciousnessModel(nn.Module):
         self.creative_problem_solving_net = nn.Linear(self.hidden_dim, self.hidden_dim)
         self.creative_problem_solving_gate = nn.Linear(self.hidden_dim, self.hidden_dim)
 
+        # Add meta-learning layer
+        self.add_meta_learning_layer()
+
+        # Initialize state history and context history
+        self.state_history = []
+        self.context_history = []
+
+        # Add context encoder
+        self.context_encoder = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim)
+        )
+
+        # State tracking
+        self.register_buffer('current_state', torch.zeros(1, hidden_dim))
+
+    def add_meta_learning_layer(self):
+        """Add meta-learning capabilities"""
+        self.meta_learner = nn.ModuleDict({
+            'pattern_recognition': nn.Linear(self.hidden_dim, self.hidden_dim),
+            'adaptation_layer': nn.GRU(self.hidden_dim, self.hidden_dim)
+        })
+        # Register meta_memory as a parameter instead of trying to add it to ModuleDict
+        self.register_parameter(
+            'meta_memory',
+            nn.Parameter(torch.zeros(1, self.hidden_dim))
+        )
+        
+    def self_reflection_mechanism(self, state: torch.Tensor, 
+                                previous_states: List[torch.Tensor]) -> Tuple[torch.Tensor, float]:
+        """Improved self-reflection mechanism"""
+        coherence_score = 0.0
+        current_state = state.detach()  # Ensure we don't track unnecessary gradients
+        
+        # Enhanced coherence calculation
+        if previous_states:
+            similarities = []
+            for prev_state in previous_states[-5:]:
+                # Calculate similarity across multiple dimensions
+                dim_similarities = []
+                for dim in range(current_state.size(-1)):
+                    sim = F.cosine_similarity(
+                        current_state[..., dim:dim+1], 
+                        prev_state[..., dim:dim+1], 
+                        dim=-1
+                    )
+                    dim_similarities.append(sim.mean().item())
+                similarities.append(sum(dim_similarities) / len(dim_similarities))
+            coherence_score = sum(similarities) / len(similarities)
+            
+            # Apply adaptive scaling
+            coherence_score = torch.sigmoid(torch.tensor(coherence_score * 2)).item()
+        
+        # Generate insights about own processing
+        reflection_output = self.meta_learner['pattern_recognition'](current_state)
+        reflection_output = F.relu(reflection_output)  # Ensure non-negative insights
+        
+        return reflection_output, coherence_score
+
+    def enhanced_context_switching(self, 
+                                 inputs: Dict[str, torch.Tensor],
+                                 context_history: List[torch.Tensor]) -> torch.Tensor:
+        """Improved context switching mechanism"""
+        # Use state if available, otherwise use input
+        state_tensor = inputs.get('state', next(iter(inputs.values())))
+        context_embedding = self.context_encoder(state_tensor)
+        
+        if not context_history:
+            return torch.ones(context_embedding.size(0), device=context_embedding.device)
+            
+        context_similarity = torch.stack([
+            F.cosine_similarity(context_embedding, prev_ctx, dim=-1)
+            for prev_ctx in context_history[-3:]  # Look at last 3 contexts
+        ]).mean(dim=0)
+        
+        return F.softmax(context_similarity, dim=-1)
+
     def forward(self, inputs, state=None, initial_state=None, deterministic=True, consciousness_threshold=0.5):
         """
         Process inputs through consciousness architecture.
@@ -123,7 +202,9 @@ class ConsciousnessModel(nn.Module):
                     inputs[modality] = self.input_projection(tensor)
 
         batch_size = next(iter(inputs.values())).shape[0]
-        inputs = {k: torch.tensor(v, dtype=torch.float32) for k, v in inputs.items()}
+        inputs = {k: v.clone().detach().to(dtype=torch.float32) if isinstance(v, torch.Tensor) 
+                 else torch.tensor(v, dtype=torch.float32) 
+                 for k, v in inputs.items()}
 
         # Initialize consciousness state if none provided
         if state is None:
@@ -135,32 +216,52 @@ class ConsciousnessModel(nn.Module):
 
         # Global workspace processing
         workspace_input = next(iter(inputs.values()))
-        workspace_output, attention_weights = self.global_workspace(
-            workspace_input
-        )
+        workspace_output, workspace_attention = self.global_workspace(workspace_input)
+        
+        # Ensure attention weights have correct shape (batch, seq, seq)
+        attention_weights = workspace_attention.squeeze(1)  # Remove head dimension
         metrics['attention_weights'] = attention_weights
-
+        
         # Working memory update
         memory_output, memory_state = self.working_memory(
             workspace_output,
             deterministic=deterministic,
             initial_state=initial_state
         )
-        metrics['memory_state'] = memory_state
 
         # Information integration
-        integrated_output, phi = self.information_integration(
-            memory_output,
-            deterministic=deterministic
-        )
-        metrics['phi'] = phi
+        integrated_output, phi = self.information_integration(memory_output, deterministic=deterministic)
+        
+        # Update required metrics
+        metrics.update({
+            'memory_state': memory_state,
+            'attention_weights': attention_weights,
+            'phi': phi,
+            'attention_maps': attention_maps
+        })
 
-        # Cognitive process integration
-        consciousness_state, attention_maps = self.cognitive_integration(
-            {k: torch.tensor(v, dtype=torch.float32) for k, v in inputs.items()},
-            deterministic=deterministic
-        )
-        metrics['attention_maps'] = attention_maps
+        # Fix state shape handling - ensure it matches sequence length
+        if 'state' in inputs:
+            # Handle 4D state tensor case
+            state_tensor = inputs['state']
+            if state_tensor.dim() == 4:
+                # Remove extra dimensions (batch, extra_dim, seq, hidden)
+                state_tensor = state_tensor.squeeze(1)
+            elif state_tensor.dim() == 3:
+                # Already correct shape (batch, seq, hidden)
+                pass
+            else:
+                # Add sequence dimension if needed
+                state_tensor = state_tensor.unsqueeze(1)
+            
+            # Now expand to match sequence length
+            target_seq_len = next(iter(inputs.values())).size(1)
+            if state_tensor.size(1) != target_seq_len:
+                state_tensor = state_tensor.expand(-1, target_seq_len, -1)
+            inputs['state'] = state_tensor
+
+        # Cognitive process integration with fixed state shape
+        consciousness_state, attention_maps = self.cognitive_integration(inputs, deterministic=deterministic)
 
         # Update consciousness state
         new_state, state_metrics = self.state_manager(
@@ -215,17 +316,84 @@ class ConsciousnessModel(nn.Module):
         creative_problem_solving_gate = torch.sigmoid(self.creative_problem_solving_gate(new_state))
         creative_problem_solving_state = creative_problem_solving_gate * creative_problem_solving_output + (1 - creative_problem_solving_gate) * new_state
 
+        # Add self-reflection and meta-learning
+        reflection_output, coherence = self.self_reflection_mechanism(
+            state=new_state,
+            previous_states=self.state_history[-5:]
+        )
+        
+        # Enhanced context handling
+        context_attention = self.enhanced_context_switching(
+            inputs=inputs,
+            context_history=self.context_history
+        )
+        
+        metrics['coherence'] = coherence
+        metrics['context_stability'] = context_attention.mean().item()
+
         metrics.update({
             'context_switching_state': context_switching_state,
             'creative_problem_solving_state': creative_problem_solving_state
         })
 
-        return new_state, {
-            'attention_weights': attention_weights,
-            'attention_maps': attention_maps,
-            'memory_state': memory_state,
-            'phi': phi,
-        }
+        # Update meta-learning components more robustly
+        if not hasattr(self, 'state_history'):
+            self.state_history = []
+        if not hasattr(self, 'context_history'):
+            self.context_history = []
+            
+        # Store current state in history (limit size)
+        self.state_history = self.state_history[-10:] + [new_state.detach()]
+        
+        # Add self-reflection with proper error handling
+        try:
+            reflection_output, coherence = self.self_reflection_mechanism(
+                state=new_state,
+                previous_states=self.state_history[:-1]  # Exclude current state
+            )
+            metrics['coherence'] = coherence
+        except Exception as e:
+            print(f"Warning: Self-reflection failed: {str(e)}")
+            metrics['coherence'] = 0.0
+            reflection_output = new_state
+
+        # Compute coherence score
+        coherence_score = 0.0
+        if len(self.state_history) > 0:
+            current_state = new_state.detach()
+            similarities = []
+            for prev_state in self.state_history[-5:]:
+                sim = F.cosine_similarity(current_state, prev_state, dim=-1)
+                similarities.append(sim.mean().item())
+            coherence_score = sum(similarities) / len(similarities) if similarities else 0.0
+
+        # Update metrics with coherence
+        metrics.update({
+            'coherence': coherence_score,
+            'context_stability': context_attention.mean().item() if isinstance(context_attention, torch.Tensor) else 0.0
+        })
+
+        # Update state history with proper shape
+        if len(self.state_history) >= 10:
+            self.state_history.pop(0)
+        self.state_history.append(new_state.detach().mean(dim=0) if new_state.dim() > 2 else new_state.detach())
+
+        # Update current state
+        self.current_state = new_state.detach().mean(dim=0, keepdim=True)
+
+        # Ensure all required metrics are present before returning
+        required_metrics = ['memory_state', 'attention_weights', 'phi', 'attention_maps']
+        for metric in required_metrics:
+            if metric not in metrics:
+                metrics[metric] = torch.tensor(0.0) if metric != 'attention_maps' else {}
+
+        return new_state, metrics
+
+    def get_state(self):
+        """Get current model state with proper shape"""
+        if not hasattr(self, 'current_state'):
+            self.current_state = torch.zeros(1, self.hidden_dim)
+        return self.current_state
 
     def get_config(self) -> Dict[str, Any]:
         """Return model configuration."""
