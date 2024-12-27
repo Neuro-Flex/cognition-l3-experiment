@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from typing import Dict, Tuple, Optional, Union
+from typing import Dict, Tuple
 from .working_memory import WorkingMemory
 from .information_integration import InformationIntegration
 from .self_awareness import SelfAwareness
@@ -8,6 +8,7 @@ from .dynamic_attention import DynamicAttention
 from .long_term_memory import LongTermMemory
 from .simulated_emotions import SimulatedEmotions
 from .global_workspace import GlobalWorkspace  # Ensure this import is present
+from .intentionality import IntentionalityModule  # Add this import
 
 class ConsciousnessModel(nn.Module):
     """
@@ -83,8 +84,18 @@ class ConsciousnessModel(nn.Module):
         # Add emotion integration layer
         self.emotion_integration = nn.Linear(hidden_dim * 2, hidden_dim)
         
-        # Add output integration layer
-        self.output_integration = nn.Linear(hidden_dim * 2, hidden_dim)
+        # Fix output integration dimensions
+        # Create projection layers for each component with proper dimensions
+        self.broadcasted_projection = nn.Linear(hidden_dim, hidden_dim)
+        self.emotional_projection = nn.Linear(hidden_dim, hidden_dim)
+        self.intentional_projection = nn.Linear(hidden_dim, hidden_dim)
+        
+        # Final integration layer
+        self.output_integration = nn.Sequential(
+            nn.Linear(hidden_dim * 3, hidden_dim),
+            nn.LayerNorm(hidden_dim),
+            nn.ReLU()
+        )
 
         # Thought generator
         self.thought_generator = nn.Linear(hidden_dim, hidden_dim)
@@ -93,6 +104,13 @@ class ConsciousnessModel(nn.Module):
         self.memory_query_transform = nn.Linear(hidden_dim, hidden_dim)
         self.memory_key_transform = nn.Linear(hidden_dim, hidden_dim)
         self.memory_retrieval_gate = nn.Linear(hidden_dim * 2, hidden_dim)
+
+        # Add intentionality module with correct dimensions
+        self.intentionality_module = IntentionalityModule(
+            hidden_dim=hidden_dim,
+            num_goals=num_states,
+            num_actions=hidden_dim  # Set to match hidden_dim
+        )
 
     def get_config(self):
         return {
@@ -202,48 +220,97 @@ class ConsciousnessModel(nn.Module):
         emotional_influence = self.emotion_integration(
             torch.cat([workspace_output['broadcasted'], emotional_state], dim=-1)
         )
-        # Final output processing
-        final_output = self.output_integration(
-            torch.cat([workspace_output['broadcasted'], emotional_influence], dim=-1)
-        )
+        # Process intentionality
+        intentionality_results = self.intentionality_module(workspace_output['broadcasted'], self.goal_state)
+        intentionality_output = intentionality_results['actions']  # Should now be [batch_size, hidden_dim]
+        
+        # Project each component to same dimension, ensuring proper shapes
+        broadcasted = workspace_output['broadcasted']
+        if (broadcasted.dim() == 3):
+            broadcasted = broadcasted.mean(dim=1)  # [batch_size, hidden_dim]
+        broadcasted_proj = self.broadcasted_projection(broadcasted)
+        
+        if (emotional_influence.dim() == 3):
+            emotional_influence = emotional_influence.mean(dim=1)
+        emotional_proj = self.emotional_projection(emotional_influence)
+        
+        # Ensure intentionality output has correct shape
+        if (intentionality_output.dim() == 3):
+            intentionality_output = intentionality_output.mean(dim=1)
+        intentional_proj = self.intentional_projection(intentionality_output)
+        
+        # All projections should now be [batch_size, hidden_dim]
+        combined_features = torch.cat([
+            broadcasted_proj,
+            emotional_proj,
+            intentional_proj
+        ], dim=-1)  # Results in [batch_size, hidden_dim * 3]
+        
+        # Final integration
+        final_output = self.output_integration(combined_features)
+        
         # Structure outputs
         output_dict = {
-            'broadcasted': final_output,
+            'broadcasted': final_output,  # [batch_size, hidden_dim]
             'memory': retrieved_memory,
-            'emotional': emotional_influence
+            'emotional': emotional_proj,
+            'intentionality': intentional_proj,
+            'goals': intentionality_results['goals'],
+            'actions': intentionality_results['actions']
         }
+        
         # Combine metrics with proper shapes
         metrics = {
             'emotional_state': emotional_state,
             'emotion_intensities': emotion_metrics.get('intensities', torch.zeros_like(emotional_state)),
             'emotional_influence': emotional_influence,
             'retrieved_memory': retrieved_memory,
-            'workspace_attention': workspace_output['workspace_attention'],  # Ensure this line is present
+            'workspace_attention': workspace_output['workspace_attention'],
             'attended': workspace_output['attended'],
             'memory_state': workspace_output.get('memory_state', torch.zeros_like(final_output)),
             'competition_weights': torch.ones(workspace_output['broadcasted'].size(0), 1),
-            'coherence': torch.mean(workspace_output['attended'], dim=1)
+            'coherence': torch.mean(workspace_output['attended'], dim=1),
+            'intentionality': {
+                'goal_coherence': torch.mean(intentionality_results['priorities'], dim=-1),
+                'goal_progress': intentionality_results['goal_progress'],  # Use full goal progress tensor
+                'action_distributions': intentionality_results['action_distributions']
+            }
         }
         metrics.update(emotion_metrics)
         return output_dict, metrics
 
     def calculate_cognition_progress(self, metrics):
-        """
-        Calculate cognitive progress based on metrics.
-        Returns a value between 0 and 100.
-        """
+        """Calculate cognitive progress based on metrics."""
         # Calculate emotional coherence
         emotional_coherence = torch.mean(metrics['emotion_intensities']).item()
         metrics['emotional_coherence'] = emotional_coherence
         
-        # Calculate overall progress using phi, coherence and emotional_coherence
-        progress = (
-            0.4 * metrics['phi'] +
-            0.3 * metrics['coherence'] +
-            0.3 * emotional_coherence
-        ) * 100
+        # Calculate goal coherence with safe handling of missing metrics
+        goal_coherence = 0.0
+        if 'intentionality' in metrics:
+            if isinstance(metrics['intentionality'], dict):
+                if 'goal_coherence' in metrics['intentionality']:
+                    # Ensure scalar value
+                    goal_coherence = metrics['intentionality']['goal_coherence'].mean().item()
         
-        return max(0, min(100, progress))  # Ensure result is between 0 and 100
+        # Handle missing or tensor phi/coherence metrics
+        phi = metrics.get('phi', 0.0)
+        if isinstance(phi, torch.Tensor):
+            phi = phi.mean().item()
+            
+        coherence = metrics.get('coherence', 0.0)
+        if isinstance(coherence, torch.Tensor):
+            coherence = coherence.mean().item()
+        
+        # Calculate progress with scalar values
+        progress = (
+            0.3 * float(phi) +
+            0.2 * float(coherence) +
+            0.2 * float(emotional_coherence) +
+            0.3 * float(goal_coherence)
+        ) * 100.0
+        
+        return float(torch.clamp(torch.tensor(progress), 0.0, 100.0).item())
 
 def create_consciousness_module(hidden_dim: int = 512,
                                 num_cognitive_processes: int = 4) -> ConsciousnessModel:
