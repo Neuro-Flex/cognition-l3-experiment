@@ -9,6 +9,7 @@ from .long_term_memory import LongTermMemory
 from .simulated_emotions import SimulatedEmotions
 from .global_workspace import GlobalWorkspace  # Ensure this import is present
 from .intentionality import IntentionalityModule  # Add this import
+from .ethical_safety import EthicalSafety  # Add import
 
 class ConsciousnessModel(nn.Module):
     """
@@ -112,6 +113,9 @@ class ConsciousnessModel(nn.Module):
             num_actions=hidden_dim  # Set to match hidden_dim
         )
 
+        # Add ethical safety module
+        self.ethical_safety = EthicalSafety(hidden_dim=hidden_dim)
+
     def get_config(self):
         return {
             'hidden_dim': self.hidden_dim,
@@ -211,34 +215,49 @@ class ConsciousnessModel(nn.Module):
         
         workspace_output = self.global_workspace(remaining_inputs)
         
+        # Project broadcasted state first
+        broadcasted = workspace_output['broadcasted']
+        if (broadcasted.dim() == 3):
+            broadcasted = broadcasted.mean(dim=1)  # [batch_size, hidden_dim]
+        broadcasted_proj = self.broadcasted_projection(broadcasted)
+
         # Get emotional state and ensure proper shape
         emotional_state, emotion_metrics = self.emotional_processor(workspace_output['broadcasted'])
         
         # Process memory retrieval
         retrieved_memory = self.memory_retrieval(workspace_output['broadcasted'])
+        
         # Calculate emotional influence - should match broadcasted shape
         emotional_influence = self.emotion_integration(
             torch.cat([workspace_output['broadcasted'], emotional_state], dim=-1)
         )
-        # Process intentionality
-        intentionality_results = self.intentionality_module(workspace_output['broadcasted'], self.goal_state)
-        intentionality_output = intentionality_results['actions']  # Should now be [batch_size, hidden_dim]
-        
-        # Project each component to same dimension, ensuring proper shapes
-        broadcasted = workspace_output['broadcasted']
-        if (broadcasted.dim() == 3):
-            broadcasted = broadcasted.mean(dim=1)  # [batch_size, hidden_dim]
-        broadcasted_proj = self.broadcasted_projection(broadcasted)
-        
         if (emotional_influence.dim() == 3):
             emotional_influence = emotional_influence.mean(dim=1)
         emotional_proj = self.emotional_projection(emotional_influence)
         
-        # Ensure intentionality output has correct shape
+        # Process intentionality
+        intentionality_results = self.intentionality_module(workspace_output['broadcasted'], self.goal_state)
+        intentionality_output = intentionality_results['actions']  # Should now be [batch_size, hidden_dim]
         if (intentionality_output.dim() == 3):
             intentionality_output = intentionality_output.mean(dim=1)
         intentional_proj = self.intentional_projection(intentionality_output)
-        
+
+        # Apply ethical and safety checks
+        context_expanded = self.goal_state.expand(broadcasted.size(0), -1)
+        safety_evaluation = self.ethical_safety(
+            state=broadcasted,
+            action=intentionality_output,
+            context=context_expanded
+        )
+
+        # Modify actions if needed based on safety evaluation
+        if not safety_evaluation['constraints_satisfied']:
+            intentionality_output = self.ethical_safety.mitigate_risks(
+                intentionality_output,
+                safety_evaluation
+            )
+            intentional_proj = self.intentional_projection(intentionality_output)
+
         # All projections should now be [batch_size, hidden_dim]
         combined_features = torch.cat([
             broadcasted_proj,
@@ -277,6 +296,8 @@ class ConsciousnessModel(nn.Module):
             }
         }
         metrics.update(emotion_metrics)
+        # Add safety metrics to output
+        metrics['safety'] = safety_evaluation
         return output_dict, metrics
 
     def calculate_cognition_progress(self, metrics):
