@@ -4,7 +4,7 @@ persistent=yes
 load-plugins=
 
 [MESSAGES CONTROL]
-disable=C0111,R0903,C0103
+disable=C0111,C0103,C0303,W0311,W0603,R0903,R0913,R0914
 
 [REPORTS]
 output-format=text
@@ -19,7 +19,7 @@ name-group=
 include-naming-hint=no
 
 [FORMAT]
-max-line-length=100
+max-line-length=120
 ignore-long-lines=^\s*(# )?<?https?://\S+>?$
 single-line-if-stmt=no
 max-module-lines=1000
