@@ -1,27 +1,39 @@
 ============================= test session starts ==============================
 platform linux -- Python 3.10.12, pytest-8.3.4, pluggy-1.5.0
-rootdir: /home/kasinadhsarma/experiment/cognition-l3-experiment
+rootdir: /home/kasinadhsarma/cognition-l3-experiment
+configfile: pyproject.toml
 plugins: cov-6.0.0, anyio-4.7.0
-collected 115 items
+collected 187 items
 
-tests/benchmarks/test_arc_reasoning.py .......                           [  6%]
-tests/benchmarks/test_bigbench_reasoning.py .....                        [ 10%]
-tests/test_consciousness.py ............................                 [ 34%]
-tests/test_environment.py ......s..                                      [ 42%]
-tests/test_error_correction.py .........                                 [ 50%]
-tests/unit/attention/test_attention.py ......                            [ 55%]
-tests/unit/attention/test_attention_mechanisms.py .......                [ 61%]
-tests/unit/integration/test_cognitive_integration.py ......              [ 66%]
-tests/unit/integration/test_state_management.py ......                   [ 72%]
-tests/unit/memory/test_integration.py ......                             [ 77%]
-tests/unit/memory/test_memory.py ..........                              [ 86%]
-tests/unit/memory/test_memory_components.py ..........                   [ 94%]
-tests/unit/state/test_consciousness_state_management.py ......           [100%]
+tests/benchmarks/test_arc_reasoning.py .......                           [  3%]
+tests/benchmarks/test_bigbench_reasoning.py .....                        [  6%]
+tests/test_consciousness.py .............................                [ 21%]
+tests/test_consciousness_integration.py ...                              [ 23%]
+tests/test_dynamic_attention.py ...............                          [ 31%]
+tests/test_environment.py ......s..                                      [ 36%]
+tests/test_error_correction.py .........                                 [ 41%]
+tests/test_ethical_safety.py ...                                         [ 42%]
+tests/test_intentionality.py ...                                         [ 44%]
+tests/test_lint.py .                                                     [ 44%]
+tests/test_long_term_memory.py ....                                      [ 47%]
+tests/test_reasoning.py ..                                               [ 48%]
+tests/test_self_awareness.py .................                           [ 57%]
+tests/unit/attention/test_attention.py ......                            [ 60%]
+tests/unit/attention/test_attention_mechanisms.py .......                [ 64%]
+tests/unit/integration/test_cognitive_integration.py ......              [ 67%]
+tests/unit/integration/test_state_management.py ......                   [ 70%]
+tests/unit/memory/test_integration.py ......                             [ 73%]
+tests/unit/memory/test_memory.py ..........                              [ 79%]
+tests/unit/memory/test_memory_components.py ..........                   [ 84%]
+tests/unit/state/test_consciousness_state_management.py ......           [ 87%]
+tests/unit/test_cognition_progress.py ............                       [ 94%]
+tests/unit/test_consciousness.py .......                                 [ 97%]
+tests/unit/test_simulated_emotions.py ....                               [100%]
 
 =============================== warnings summary ===============================
-../../.local/lib/python3.10/site-packages/torch/__init__.py:1144
+../.local/lib/python3.10/site-packages/torch/__init__.py:1144
   /home/kasinadhsarma/.local/lib/python3.10/site-packages/torch/__init__.py:1144: UserWarning: torch.set_default_tensor_type() is deprecated as of PyTorch 2.1, please use torch.set_default_dtype() and torch.set_default_device() as alternatives. (Triggered internally at ../torch/csrc/tensor/python_tensor.cpp:432.)
     _C._set_default_tensor_type(t)
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-================== 114 passed, 1 skipped, 1 warning in 10.78s ==================
+================== 186 passed, 1 skipped, 1 warning in 20.36s ==================
