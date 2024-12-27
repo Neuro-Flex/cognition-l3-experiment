@@ -44,3 +44,13 @@ def jit_compile():
     def decorator(func):
         return torch.jit.script(func)
     return decorator
+
+@pytest.fixture(autouse=True)
+def setup_torch_defaults():
+    # Use recommended alternatives to set_default_tensor_type
+    torch.set_default_dtype(torch.float32)
+    # Only set default device if CUDA is available
+    if torch.cuda.is_available():
+        torch.set_default_device('cuda')
+    else:
+        torch.set_default_device('cpu')

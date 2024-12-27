@@ -75,7 +75,11 @@ class GlobalWorkspace(nn.Module):
 
         # Pad remaining slots with zeros if needed
         while len(integrated_features) < self.num_modalities:
-            zero_features = torch.zeros_like(integrated_features[0])
+            zero_features = torch.zeros_like(
+                integrated_features[0], 
+                dtype=integrated_features[0].dtype,
+                device=integrated_features[0].device
+            )
             integrated_features.append(zero_features)
 
         # Stack and reshape for attention
@@ -121,6 +125,7 @@ class GlobalWorkspace(nn.Module):
                 self.num_modalities - attention_weights.size(1),
                 seq_len,
                 attention_weights.size(3),
+                dtype=attention_weights.dtype,
                 device=attention_weights.device
             )
             attention_weights = torch.cat([attention_weights, padding], dim=1)
@@ -132,6 +137,7 @@ class GlobalWorkspace(nn.Module):
                 attention_weights.size(1),
                 3 - attention_weights.size(2),
                 attention_weights.size(3),
+                dtype=attention_weights.dtype,
                 device=attention_weights.device
             )
             attention_weights = torch.cat([attention_weights, padding], dim=2)
